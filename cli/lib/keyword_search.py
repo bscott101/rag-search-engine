@@ -20,11 +20,17 @@ def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> List[MovieM
     idx = InvertedIndex()
     idx.load()
 
-    movie_ids = idx.get_documents(query)
-    results = []
-    for id in movie_ids[:limit]:
-        movie = idx.get_document_object(id)
-        results.append(movie)
+    query_tokens = preprocess_text(query)
+    seen, results = set(), []
+    for token in query_tokens:
+        doc_ids = idx.get_documents(token)
+        for id in doc_ids:
+            if id in seen:
+                continue
+            doc = idx.get_document_object(id)
+            results.append(doc)
+            if len(results) >= limit:
+                return results
 
     return results
 

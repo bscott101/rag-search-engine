@@ -19,11 +19,7 @@ class InvertedIndex:
             self.index[token].add(doc_id)
 
     def get_documents(self, term: str) -> List[int]:
-        query_tokens = preprocess_text(term)
-        hits = set()
-        for token in query_tokens:
-            hits.update(self.index.get(token, set()))
-
+        hits = self.index.get(term, set())
         return sorted(list(hits))
 
     def get_document_object(self, doc_id: int) -> MovieModel:
