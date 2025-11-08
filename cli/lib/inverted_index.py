@@ -42,3 +42,9 @@ class InvertedIndex:
     def save(self):
         self.__write_file(INDEX_PATH, pickle.dumps(self.index))
         self.__write_file(DOCMAP_PATH, pickle.dumps(self.docmap))
+
+    def load(self):
+        with open(INDEX_PATH, "rb") as f:
+            self.index = pickle.load(f)
+        with open(DOCMAP_PATH, "rb") as f:
+            self.docmap = pickle.load(f)
