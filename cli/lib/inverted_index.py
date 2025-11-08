@@ -2,6 +2,7 @@ from .search_utils import load_movies, preprocess_text
 from typing import Dict, List
 from .schemas import MovieModel
 import pickle
+from collections import defaultdict
 
 INDEX_PATH = "cache/index.pkl"
 DOCMAP_PATH = "cache/docmap.pkl"
@@ -9,30 +10,33 @@ DOCMAP_PATH = "cache/docmap.pkl"
 
 class InvertedIndex:
     def __init__(self):
-        self.index: Dict[str, List[int]] = {}
+        self.index = defaultdict(set)
         self.docmap: Dict[int, MovieModel] = {}
 
-    def __add_document(self, doc_id: int, text: str):
+    def __add_document(self, doc_id: int, text: str) -> None:
         tokens = preprocess_text(text)
-        for token in tokens:
-            try:
-                self.index[token].append(doc_id)
-            except:
-                self.index[token] = [doc_id]
+        for token in set(tokens):
+            self.index[token].add(doc_id)
 
-    def get_documents(self, term: str):
+    def get_documents(self, term: str) -> List[int]:
         query_tokens = preprocess_text(term)
+        hits = set()
         for token in query_tokens:
-            try:
-                hits = self.index[token]
-            except:
-                raise ValueError(f"{token} is not in db")
-        return sorted(hits)
+            hits.update(self.index.get(token, set()))
+
+        return sorted(list(hits))
+
+    def get_document_object(self, doc_id: int) -> MovieModel:
+        try:
+            return self.docmap[doc_id]
+        except:
+            raise ValueError(f"{doc_id} was not found")
 
     def build(self):
         movies = load_movies()
         for movie in movies:
-            self.__add_document(movie.id, f"{movie.title} {movie.description}")
+            movie_desc = f"{movie.title} {movie.description}"
+            self.__add_document(movie.id, movie_desc)
             self.docmap[movie.id] = movie
 
     def __write_file(self, file_path, object):
@@ -44,7 +48,14 @@ class InvertedIndex:
         self.__write_file(DOCMAP_PATH, pickle.dumps(self.docmap))
 
     def load(self):
-        with open(INDEX_PATH, "rb") as f:
-            self.index = pickle.load(f)
-        with open(DOCMAP_PATH, "rb") as f:
-            self.docmap = pickle.load(f)
+        try:
+            with open(INDEX_PATH, "rb") as f:
+                self.index = pickle.load(f)
+        except:
+            raise ValueError(f"{INDEX_PATH} not found")
+
+        try:
+            with open(DOCMAP_PATH, "rb") as f:
+                self.docmap = pickle.load(f)
+        except:
+            raise ValueError(f"{DOCMAP_PATH} not found")

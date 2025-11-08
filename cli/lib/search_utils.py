@@ -33,9 +33,11 @@ def filter_stop_words(query_tokens: List[str]) -> List[str]:
 
 def preprocess_text(text: str) -> List[str]:
     stemmer = PorterStemmer()
+
     text = text.lower()
     trans_table = str.maketrans("", "", string.punctuation)
-    text.translate(trans_table)
+    text = text.translate(trans_table)
+
     tokens = text.split(" ")
     tokens = [x for x in tokens if not None]
     tokens = filter_stop_words(tokens)

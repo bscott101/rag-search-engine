@@ -1,6 +1,5 @@
 import argparse
 from lib.keyword_search import search_command, build_command
-from lib.inverted_index import InvertedIndex
 
 
 def main() -> None:
@@ -12,8 +11,6 @@ def main() -> None:
 
     subparsers.add_parser("build", help="Create Index of Movies")
 
-    inverted_index = InvertedIndex()
-
     args = parser.parse_args()
     match args.command:
         case "search":
@@ -22,9 +19,11 @@ def main() -> None:
 
             movies = search_command(args.query)
             for index, item in enumerate(movies[:5]):
-                print(f"{index + 1}. {item["title"]}")
+                print(f"{index + 1}. {item.title}")
         case "build":
+            print("Building index")
             build_command()
+            print("Sucessfully built and saved")
         case _:
             parser.print_help()
 

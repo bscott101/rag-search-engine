@@ -3,8 +3,9 @@ from .search_utils import (
     DEFAULT_SEARCH_LIMIT,
     preprocess_text,
 )
+from .schemas import MovieModel
 from .inverted_index import InvertedIndex
-from typing import List, Dict
+from typing import List
 
 
 def has_matching_token(query_tokens: List[str], title_tokens: List[str]) -> bool:
@@ -15,16 +16,15 @@ def has_matching_token(query_tokens: List[str], title_tokens: List[str]) -> bool
     return False
 
 
-def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> List[Dict]:
-    movies = load_movies()
+def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> List[MovieModel]:
+    idx = InvertedIndex()
+    idx.load()
+
+    movie_ids = idx.get_documents(query)
     results = []
-    for movie in movies:
-        query_tokens = preprocess_text(query)
-        title_tokens = preprocess_text(movie.title)
-        if has_matching_token(query_tokens, title_tokens):
-            results.append(movie)
-            if len(results) >= limit:
-                break
+    for id in movie_ids[:limit]:
+        movie = idx.get_document_object(id)
+        results.append(movie)
 
     return results
 
@@ -33,5 +33,3 @@ def build_command():
     idx = InvertedIndex()
     idx.build()
     idx.save()
-    docs = idx.get_documents("merida")
-    print(f"First document for token 'merida' = {docs[0]}")
