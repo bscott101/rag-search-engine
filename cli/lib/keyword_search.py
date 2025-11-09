@@ -39,3 +39,14 @@ def build_command():
     idx = InvertedIndex()
     idx.build()
     idx.save()
+
+
+def tf_command(doc_id: int, term: str):
+    token = preprocess_text(term)
+    if len(token) > 1:
+        raise ValueError(f"Only one word is searchable for count")
+
+    idx = InvertedIndex()
+    idx.load()
+
+    return idx.get_tf(doc_id, term)
