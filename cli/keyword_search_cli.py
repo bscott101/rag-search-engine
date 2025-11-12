@@ -1,5 +1,6 @@
 import argparse
-from lib.keyword_search import search_command, build_command, tf_command
+
+from lib.keyword_search import build_command, idx_command, search_command, tf_command
 
 
 def main() -> None:
@@ -17,6 +18,9 @@ def main() -> None:
     )
     tf_parser.add_argument("query", type=str, help="Word Frequency")
 
+    idf_parser = subparsers.add_parser("idf", help="Inverse Document Frequency")
+    idf_parser.add_argument("query", type=str, help="Token search")
+
     subparsers.add_parser("build", help="Create Index of Movies")
 
     args = parser.parse_args()
@@ -24,13 +28,16 @@ def main() -> None:
         case "search":
             # print the search query here
             print(f"Searching for: {args.query}")
-
             movies = search_command(args.query)
             for index, item in enumerate(movies[:5]):
                 print(f"{index + 1}. {item.title}")
         case "tf":
             count = tf_command(args.doc_id, args.query)
             print(count)
+
+        case "idf":
+            idf = idx_command(args.query)
+            print(f"Inverse document frequency of '{args.query}': {idf:.2f}")
 
         case "build":
             print("Building index")

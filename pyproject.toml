@@ -8,4 +8,5 @@ dependencies = [
     "nltk==3.9.1",
     "pydantic>=2.12.4",
     "pylance>=0.38.3",
+    "pyright>=1.1.407",
 ]

@@ -1,8 +1,11 @@
-from .search_utils import load_movies, preprocess_text
-from typing import Dict, List
-from .schemas import MovieModel
+import math
+import os
 import pickle
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
+from typing import Dict, List
+
+from .schemas import MovieModel
+from .search_utils import load_movies, preprocess_text
 
 INDEX_PATH = "cache/index.pkl"
 DOCMAP_PATH = "cache/docmap.pkl"
@@ -38,6 +41,18 @@ class InvertedIndex:
         token = token[0]
         return self.term_frequencies[doc_id][token]
 
+    def get_idf(self, term: str) -> float:
+        tokens = preprocess_text(term)
+        if len(tokens) > 1:
+            raise ValueError(
+                "Only one term is supported for inverse document frequency"
+            )
+        token = tokens[0]
+        doc_count = len(self.docmap)
+        term_doc_count = len(self.index[token])
+
+        return math.log((doc_count + 1) / (term_doc_count + 1))
+
     def build(self):
         movies = load_movies()
         for movie in movies:
@@ -45,11 +60,13 @@ class InvertedIndex:
             self.__add_document(movie.id, movie_desc)
             self.docmap[movie.id] = movie
 
-    def __write_file(self, file_path, object):
+    def __write_file(self, file_path: str, object: bytes):
         with open(file_path, "wb") as file:
             file.write(object)
 
     def save(self):
+        if os.path.exists("cache") == False:
+            os.makedirs("cache")
         self.__write_file(INDEX_PATH, pickle.dumps(self.index))
         self.__write_file(DOCMAP_PATH, pickle.dumps(self.docmap))
         self.__write_file(COUNTER_PATH, pickle.dumps(self.term_frequencies))

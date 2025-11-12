@@ -1,11 +1,7 @@
-from .search_utils import (
-    load_movies,
-    DEFAULT_SEARCH_LIMIT,
-    preprocess_text,
-)
-from .schemas import MovieModel
-from .inverted_index import InvertedIndex
 from typing import List
+from .inverted_index import InvertedIndex
+from .schemas import MovieModel
+from .search_utils import DEFAULT_SEARCH_LIMIT, preprocess_text
 
 
 def has_matching_token(query_tokens: List[str], title_tokens: List[str]) -> bool:
@@ -41,7 +37,7 @@ def build_command():
     idx.save()
 
 
-def tf_command(doc_id: int, term: str):
+def tf_command(doc_id: int, term: str) -> int:
     token = preprocess_text(term)
     if len(token) > 1:
         raise ValueError(f"Only one word is searchable for count")
@@ -50,3 +46,10 @@ def tf_command(doc_id: int, term: str):
     idx.load()
 
     return idx.get_tf(doc_id, term)
+
+
+def idx_command(term: str) -> float:
+    idx = InvertedIndex()
+    idx.load()
+
+    return idx.get_idf(term)
