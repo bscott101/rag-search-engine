@@ -16,14 +16,14 @@ def main() -> None:
     tf_parser.add_argument(
         "doc_id", type=int, help="Document Id for word count frequency"
     )
-    tf_parser.add_argument("query", type=str, help="Word Frequency")
+    tf_parser.add_argument("term", type=str, help="Term for Word Frequency")
 
     idf_parser = subparsers.add_parser("idf", help="Inverse Document Frequency")
-    idf_parser.add_argument("query", type=str, help="Token search")
+    idf_parser.add_argument("term", type=str, help="Token search")
 
     tf_idf = subparsers.add_parser(name="tfidf", help="Get TF IDF score")
     tf_idf.add_argument("doc_id", type=int, help="document id for scoring")
-    tf_idf.add_argument("query", type=str, help="word for scoring")
+    tf_idf.add_argument("term", type=str, help="word for scoring")
 
     subparsers.add_parser("build", help="Create Index of Movies")
 
@@ -35,24 +35,26 @@ def main() -> None:
             movies = keyword_search.search_command(args.query)
             for index, item in enumerate(movies[:5]):
                 print(f"{index + 1}. {item.title}")
+
         case "tf":
-            count = keyword_search.tf_command(args.doc_id, args.query)
+            count = keyword_search.tf_command(args.doc_id, args.term)
             print(count)
 
         case "idf":
-            idf = keyword_search.idx_command(args.query)
-            print(f"Inverse document frequency of '{args.query}': {idf:.2f}")
+            idf = keyword_search.idx_command(args.term)
+            print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
 
         case "tfidf":
-            tf_idf = keyword_search.tfidf_command(args.doc_id, args.query)
+            tf_idf = keyword_search.tfidf_command(args.doc_id, args.term)
             print(
-                f"TF-IDF score of '{args.query}' in document '{args.doc_id}': {tf_idf:.2f}"
+                f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tf_idf:.2f}"
             )
 
         case "build":
             print("Building index")
             keyword_search.build_command()
             print("Sucessfully built and saved")
+
         case _:
             parser.print_help()
 
