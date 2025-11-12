@@ -1,4 +1,5 @@
 from typing import List
+
 from .inverted_index import InvertedIndex
 from .schemas import MovieModel
 from .search_utils import DEFAULT_SEARCH_LIMIT, preprocess_text
@@ -63,3 +64,10 @@ def tfidf_command(doc_id: int, term: str) -> float:
     idf = idx.get_idf(term)
 
     return tf * idf
+
+
+def bm25_idf_command(term: str) -> float:
+    idx = InvertedIndex()
+    idx.load()
+
+    return idx.get_dm25_idf(term)

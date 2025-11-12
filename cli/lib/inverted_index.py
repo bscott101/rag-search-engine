@@ -53,6 +53,17 @@ class InvertedIndex:
 
         return math.log((doc_count + 1) / (term_doc_count + 1))
 
+    def get_dm25_idf(self, term: str) -> float:
+        tokens = preprocess_text(term)
+        if len(tokens) > 1:
+            raise ValueError("Only one term")
+        token = tokens[0]
+
+        N = len(self.docmap)
+        df = len(self.index[token])
+
+        return math.log((N - df + 0.5) / (df + 0.5) + 1)
+
     def build(self):
         movies = load_movies()
         for movie in movies:
