@@ -3,6 +3,7 @@ import os
 import pickle
 import string
 from collections import Counter, defaultdict
+from typing import Any
 
 from nltk.stem import PorterStemmer
 
@@ -11,6 +12,7 @@ from .search_utils import (
     BM25_B,
     CACHE_DIR,
     DEFAULT_SEARCH_LIMIT,
+    format_search_result,
     load_movies,
     load_stopwords,
 )
@@ -114,6 +116,34 @@ class InvertedIndex:
         idf = self.get_idf(term)
         return tf * idf
 
+    def bm25(self, doc_id: int, term: str) -> float:
+        return self.get_bm25_tf(doc_id, term) * self.get_bm25_idf(term)
+
+    def bm25_search(self, query: str, limit: int) -> list[dict[str, Any]]:
+        tokens = tokenize_text(query)
+
+        doc_scores = {}
+        for doc_id in self.docmap:
+            score = 0.0
+            for token in tokens:
+                score += self.bm25(doc_id, token)
+            doc_scores[doc_id] = score
+        sorted_scores = sorted(
+            doc_scores.items(), key=lambda item: item[1], reverse=True
+        )
+
+        result = []
+        for doc_id, score in sorted_scores[:limit]:
+            doc = self.docmap[doc_id]
+            formated_result = format_search_result(
+                doc_id=doc["id"],
+                title=doc["title"],
+                document=doc["description"],
+                score=score,
+            )
+            result.append(formated_result)
+        return result
+
 
 def build_command() -> None:
     idx = InvertedIndex()
@@ -195,3 +225,9 @@ def tfidf_command(doc_id: int, term: str) -> float:
     idx = InvertedIndex()
     idx.load()
     return idx.get_tf_idf(doc_id, term)
+
+
+def bm25search_command(query: str, limit: int):
+    idx = InvertedIndex()
+    idx.load()
+    return idx.bm25_search(query, limit)

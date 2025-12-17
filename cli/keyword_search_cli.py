@@ -8,6 +8,7 @@ from lib.keyword_search import (
     search_command,
     tf_command,
     tfidf_command,
+    bm25search_command,
 )
 from lib.search_utils import BM25_K1, BM25_B
 
@@ -56,9 +57,19 @@ def main() -> None:
     bm25_tf_parser.add_argument(
         "b", type=float, nargs="?", default=BM25_B, help="Tunable BM25 B parameter"
     )
+    bm25search_parser = subparsers.add_parser(
+        "bm25search", help="Search movies using full BM25 scoring"
+    )
+    bm25search_parser.add_argument("query", type=str, help="Search query")
+    bm25search_parser.add_argument(
+        "limit",
+        type=float,
+        nargs="?",
+        default=5,
+        help="Limit the number of document hits returned",
+    )
 
     args = parser.parse_args()
-
     match args.command:
         case "build":
             print("Building inverted index...")
@@ -88,6 +99,12 @@ def main() -> None:
             print(
                 f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}"
             )
+        case "bm25search":
+            bm25_search = bm25search_command(args.query, args.limit)
+            for index, item in enumerate(bm25_search):
+                print(
+                    f"{index + 1}. ({item['id']}) {item['title']} - Score: {item['score']:.2f}"
+                )
         case _:
             parser.print_help()
 
