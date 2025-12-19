@@ -11,4 +11,5 @@ dependencies = [
     "pylance>=0.38.3",
     "pyright>=1.1.407",
     "sentence-transformers>=5.2.0",
+    "torch>=2.9.1",
 ]
