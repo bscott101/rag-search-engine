@@ -12,3 +12,4 @@ wheels/
 data/
 uv.lock
 cache/
+.DS_Store

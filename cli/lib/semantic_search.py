@@ -12,8 +12,8 @@ MOVIE_EMBEDDINGS_PATH = os.path.join(CACHE_DIR, "movie_embeddings.npy")
 class SemanticSearch:
     def __init__(self):
         self.model = SentenceTransformer("all-MiniLM-L6-v2", device="mps")
-        self.embeddings = None
-        self.documents = None
+        self.embeddings: NDArray = None
+        self.documents: List[dict] = None
         self.document_map = {}
 
     def verify_model(self):
@@ -59,6 +59,37 @@ class SemanticSearch:
             self.document_map[doc["id"]] = doc
         return self.embeddings
 
+    def search(self, query: str, limit: int = 5) -> List[dict]:
+        if self.embeddings is None or self.embeddings.size == 0:
+            raise ValueError(
+                "No embeddings loaded. Call 'load_or_create_embeddings' first."
+            )
+
+        if self.documents is None or len(self.documents) == 0:
+            raise ValueError(
+                "No documents loaded. Call 'load_or_create_embeddings' first."
+            )
+
+        emb = self.generate_embedding(query)[0]
+        scores = []
+        for index, doc_emb in enumerate(self.embeddings):
+            doc = self.documents[index]
+            score = cosine_similarity(emb, doc_emb)
+            scores.append((score, doc))
+
+        scores.sort(key=lambda x: x[0], reverse=True)
+        result = []
+        for score, doc in scores[:limit]:
+            result.append(
+                {
+                    "score": score,
+                    "title": doc["title"],
+                    "description": doc["description"],
+                }
+            )
+
+        return result
+
 
 def verify_model():
     model = SemanticSearch()
@@ -93,3 +124,21 @@ def embed_query_text(query: str):
     print(f"Query: {query}")
     print(f"First 5 dimensions: {emb[:5]}")
     print(f"Shape: {emb.shape[0]}")
+
+
+def cosine_similarity(vec1: NDArray[np.float32], vec2: NDArray[np.float32]) -> float:
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    return dot_product / (norm1 * norm2)
+
+
+def search_command(query: str, limit: int = 5) -> List[dict]:
+    model = SemanticSearch()
+    documents = load_movies()
+    model.load_or_create_embeddings(documents)
+    return model.search(query, limit)
