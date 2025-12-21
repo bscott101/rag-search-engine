@@ -4,7 +4,12 @@ from typing import List
 from numpy.typing import NDArray
 from sentence_transformers import SentenceTransformer
 
-from .search_utils import CACHE_DIR, load_movies
+from .search_utils import (
+    CACHE_DIR,
+    load_movies,
+    DEFAULT_CHUNK_SIZE,
+    DEFAULT_CHUNK_OVERLAP,
+)
 
 MOVIE_EMBEDDINGS_PATH = os.path.join(CACHE_DIR, "movie_embeddings.npy")
 
@@ -144,16 +149,32 @@ def search_command(query: str, limit: int = 5) -> List[dict]:
     return model.search(query, limit)
 
 
-def chunk_text(text: str, chunk_size: int = 200):
+def fixed_size_chunking(
+    text: str, chunk_size: int = 200, overlap: int = 0
+) -> List[str]:
     words = text.split(" ")
     chunks = []
     for index in range(0, len(words), chunk_size):
-        chunk_slice = words[index : index + chunk_size]
+        start = index - overlap
+        end = index + chunk_size + overlap
+        if start < 0:
+            start = index
+        chunk_slice = words[start:end]
+
         res = ""
         for w in chunk_slice:
             res += w + " "
         chunks.append(res)
 
+    return chunks
+
+
+def chunk_text(
+    text: str,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    overlap: int = DEFAULT_CHUNK_OVERLAP,
+):
+    chunks = fixed_size_chunking(text, chunk_size, overlap)
     print(f"Chunking {len(text)} characters")
     for index, chunk in enumerate(chunks):
         print(f"{index + 1}. {chunk}")

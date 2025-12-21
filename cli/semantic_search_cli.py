@@ -8,6 +8,7 @@ from lib.semantic_search import (
     search_command,
     chunk_text,
 )
+from lib.search_utils import DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP
 
 
 def main():
@@ -44,6 +45,7 @@ def main():
         default=200,
         help="Number of characters that you want to chunks to be",
     )
+    chunk.add_argument("--overlap", type=int, nargs="?", default=0, help="overlap")
 
     args = parser.parse_args()
     match args.command:
@@ -61,7 +63,7 @@ def main():
                 print(f"{index + 1}. {result['title']} (score: {result['score']})")
                 print(f"\t{result['description']}")
         case "chunk":
-            chunk_text(args.text, args.chunk_size)
+            chunk_text(args.text, args.chunk_size, args.overlap)
 
         case _:
             parser.print_help()
