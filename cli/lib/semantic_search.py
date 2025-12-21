@@ -142,3 +142,18 @@ def search_command(query: str, limit: int = 5) -> List[dict]:
     documents = load_movies()
     model.load_or_create_embeddings(documents)
     return model.search(query, limit)
+
+
+def chunk_text(text: str, chunk_size: int = 200):
+    words = text.split(" ")
+    chunks = []
+    for index in range(0, len(words), chunk_size):
+        chunk_slice = words[index : index + chunk_size]
+        res = ""
+        for w in chunk_slice:
+            res += w + " "
+        chunks.append(res)
+
+    print(f"Chunking {len(text)} characters")
+    for index, chunk in enumerate(chunks):
+        print(f"{index + 1}. {chunk}")

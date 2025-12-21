@@ -6,6 +6,7 @@ from lib.semantic_search import (
     verify_embeddings,
     embed_query_text,
     search_command,
+    chunk_text,
 )
 
 
@@ -34,6 +35,16 @@ def main():
         "--limit", type=int, nargs="?", default=5, help="Number of results to return"
     )
 
+    chunk = subparsers.add_parser("chunk", help="Chunks text to the chunck size")
+    chunk.add_argument("text", type=str, help="Input text to chunk")
+    chunk.add_argument(
+        "--chunk-size",
+        type=int,
+        nargs="?",
+        default=200,
+        help="Number of characters that you want to chunks to be",
+    )
+
     args = parser.parse_args()
     match args.command:
         case "verify":
@@ -49,6 +60,8 @@ def main():
             for index, result in enumerate(results):
                 print(f"{index + 1}. {result['title']} (score: {result['score']})")
                 print(f"\t{result['description']}")
+        case "chunk":
+            chunk_text(args.text, args.chunk_size)
 
         case _:
             parser.print_help()
