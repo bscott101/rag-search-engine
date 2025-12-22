@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import re
 from typing import List
 from numpy.typing import NDArray
 from sentence_transformers import SentenceTransformer
@@ -169,12 +170,34 @@ def fixed_size_chunking(
     return chunks
 
 
+def semantic_chunk(text: str, max_chunk_size: int = 4, overlap: int = 0):
+    chunks = re.split(r"(?<=[.!?])\s+", text)
+    result = []
+    i = 0
+    n_sentences = len(chunks)
+    while i < n_sentences:
+        chunk_sentences = chunks[i : i + max_chunk_size]
+        if chunks and len(chunk_sentences) <= overlap:
+            break
+        result.append(" ".join(chunk_sentences))
+        i += max_chunk_size - overlap
+    return result
+
+
 def chunk_text(
     text: str,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     overlap: int = DEFAULT_CHUNK_OVERLAP,
+    chunk_method: str = "chunk",
 ):
-    chunks = fixed_size_chunking(text, chunk_size, overlap)
-    print(f"Chunking {len(text)} characters")
+    chunks = []
+    match chunk_method:
+        case "chunk":
+            print(f"Chunking {len(text)} characters")
+            chunks = fixed_size_chunking(text, chunk_size, overlap)
+        case "semantic_chunk":
+            print(f"Semantically chunking {len(text)} characters")
+            chunks = semantic_chunk(text, chunk_size, overlap)
+
     for index, chunk in enumerate(chunks):
         print(f"{index + 1}. {chunk}")

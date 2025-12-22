@@ -47,6 +47,23 @@ def main():
     )
     chunk.add_argument("--overlap", type=int, nargs="?", default=0, help="overlap")
 
+    semantic_chunk = subparsers.add_parser(
+        "semantic_chunk", help="Chunk text for semantic chunks"
+    )
+    semantic_chunk.add_argument(
+        "text", type=str, help="Text to chunk for semantic processing"
+    )
+    semantic_chunk.add_argument(
+        "--max-chunk-size",
+        type=int,
+        nargs="?",
+        default=4,
+        help="Max number of sentences for each chunk",
+    )
+    semantic_chunk.add_argument(
+        "--overlap", type=int, nargs="?", default=0, help="overlap between sentences"
+    )
+
     args = parser.parse_args()
     match args.command:
         case "verify":
@@ -63,8 +80,9 @@ def main():
                 print(f"{index + 1}. {result['title']} (score: {result['score']})")
                 print(f"\t{result['description']}")
         case "chunk":
-            chunk_text(args.text, args.chunk_size, args.overlap)
-
+            chunk_text(args.text, args.chunk_size, args.overlap, args.command)
+        case "semantic_chunk":
+            chunk_text(args.text, args.max_chunk_size, args.overlap, args.command)
         case _:
             parser.print_help()
 
