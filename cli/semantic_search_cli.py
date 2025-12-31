@@ -8,8 +8,13 @@ from lib.semantic_search import (
     search_command,
     chunk_text,
     embed_chunks,
+    semantic_chunk_search,
 )
-from lib.search_utils import DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP
+from lib.search_utils import (
+    DEFAULT_CHUNK_SIZE,
+    DEFAULT_CHUNK_OVERLAP,
+    DEFAULT_SEMANTIC_LIMIT,
+)
 
 
 def main():
@@ -66,6 +71,22 @@ def main():
     )
     subparsers.add_parser("embed_chunks", help="Create semantic embedding chunks")
 
+    search_chunked = subparsers.add_parser(
+        "search_chunked", help="Enter a query to search semanticly"
+    )
+    search_chunked.add_argument(
+        "query",
+        type=str,
+        help="The query that you want to perform a embedded search on",
+    )
+    search_chunked.add_argument(
+        "--limit",
+        type=int,
+        nargs="?",
+        default=DEFAULT_SEMANTIC_LIMIT,
+        help="Amount of document hits to return",
+    )
+
     args = parser.parse_args()
     match args.command:
         case "verify":
@@ -86,7 +107,13 @@ def main():
         case "semantic_chunk":
             chunk_text(args.text, args.max_chunk_size, args.overlap, args.command)
         case "embed_chunks":
-            embed_chunks()
+            embeddings = embed_chunks()
+            print(f"Generated {len(embeddings)} chunked embeddings")
+        case "search_chunked":
+            result = semantic_chunk_search(args.query, args.limit)
+            for i, res in enumerate(result):
+                print(f"\n{i + 1}. {res["title"]} (score: {res['score']:.4f})")
+                print(f"   {res["document"]}...")
         case _:
             parser.print_help()
 
