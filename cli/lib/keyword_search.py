@@ -6,7 +6,7 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from nltk.stem import PorterStemmer
-
+from .schemas import Movies, Movie
 from .search_utils import (
     BM25_K1,
     BM25_B,
@@ -21,7 +21,7 @@ from .search_utils import (
 class InvertedIndex:
     def __init__(self) -> None:
         self.index = defaultdict(set)
-        self.docmap: dict[int, dict] = {}
+        self.docmap: dict[int, Movie] = {}
         self.index_path = os.path.join(CACHE_DIR, "index.pkl")
         self.docmap_path = os.path.join(CACHE_DIR, "docmap.pkl")
         self.tf_path = os.path.join(CACHE_DIR, "term_frequencies.pkl")
@@ -31,10 +31,10 @@ class InvertedIndex:
 
     def build(self) -> None:
         movies = load_movies()
-        for m in movies:
-            doc_id = m["id"]
-            doc_description = f"{m['title']} {m['description']}"
-            self.docmap[doc_id] = m
+        for movie in movies:
+            doc_id = movie.id
+            doc_description = f"{movie.title} {movie.description}"
+            self.docmap[doc_id] = movie
             self.__add_document(doc_id, doc_description)
 
     def save(self) -> None:
@@ -136,9 +136,9 @@ class InvertedIndex:
         for doc_id, score in sorted_scores[:limit]:
             doc = self.docmap[doc_id]
             formated_result = format_search_result(
-                doc_id=doc["id"],
-                title=doc["title"],
-                document=doc["description"],
+                doc_id=doc.id,
+                title=doc.title,
+                document=doc.description,
                 score=score,
             )
             result.append(formated_result)

@@ -1,6 +1,7 @@
 import json
 import os
-from typing import Any
+from typing import Any, List
+from .schemas import Movies, Movie
 
 DEFAULT_SEARCH_LIMIT = 5
 SCORE_PRECISION = 3
@@ -21,10 +22,11 @@ DEFAULT_SEMANTIC_LIMIT = 5
 DOCUMENT_PREVIEW_LENGTH = 100
 
 
-def load_movies() -> list[dict]:
+def load_movies() -> List[Movie]:
     with open(DATA_PATH, "r") as f:
         data = json.load(f)
-    return data["movies"]
+        data = Movies(**data)
+    return data.movies
 
 
 def load_stopwords() -> list[str]:

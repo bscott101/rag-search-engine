@@ -7,6 +7,7 @@ from typing import List
 from numpy.typing import NDArray
 from sentence_transformers import SentenceTransformer
 
+from .schemas import Movies, Movie
 from .search_utils import (
     CACHE_DIR,
     load_movies,
@@ -25,8 +26,8 @@ class SemanticSearch:
         self.device = self.__device()
         self.model = SentenceTransformer(model_name, device=self.device)
         self.embeddings: NDArray = None
-        self.documents: List[dict] = None
-        self.document_map = {}
+        self.documents: List[Movie] = None
+        self.document_map: dict[int, Movie] = {}
 
     def __device(self) -> str:
         if torch.mps.is_available():
@@ -48,12 +49,12 @@ class SemanticSearch:
         emb = self.model.encode(text, show_progress_bar=True)
         return emb
 
-    def build_embeddings(self, documents: list[dict]):
+    def build_embeddings(self, documents: list[Movie]):
         self.documents = documents
         doc_strings = []
         for doc in documents:
-            self.document_map[doc["id"]] = doc
-            doc_string = f"{doc['title']}: {doc['description']}"
+            self.document_map[doc.id] = doc
+            doc_string = f"{doc.title}: {doc.description}"
             doc_strings.append(doc_string)
 
         self.embeddings = self.generate_embedding(doc_strings)
@@ -63,7 +64,7 @@ class SemanticSearch:
             np.save(f, self.embeddings)
         return self.embeddings
 
-    def load_or_create_embeddings(self, documents: list[dict]):
+    def load_or_create_embeddings(self, documents: list[Movie]):
         if os.path.exists(MOVIE_EMBEDDINGS_PATH) == False:
             return self.build_embeddings(documents)
 
@@ -73,7 +74,7 @@ class SemanticSearch:
 
         self.documents = documents
         for doc in documents:
-            self.document_map[doc["id"]] = doc
+            self.document_map[doc.id] = doc
         return self.embeddings
 
     def search(self, query: str, limit: int = 5) -> List[dict]:
@@ -116,18 +117,18 @@ class ChunkedSemanticSearch(SemanticSearch):
         self.CHUNK_EMBEDDING_PATH = os.path.join(CACHE_DIR, "chunk_embeddings.npy")
         self.CHUNK_METADATA_PATH = os.path.join(CACHE_DIR, "chunk_metadata.json")
 
-    def build_chunk_embeddings(self, documents: List[dict]) -> NDArray:
+    def build_chunk_embeddings(self, documents: List[Movie]) -> NDArray:
         self.documents = documents
         all_chunks = []
         chunk_metadata = []
         for document in documents:
-            doc_id = document["id"]
+            doc_id = document.id
             self.document_map[doc_id] = document
-            if len(document["description"]) == 0:
+            if len(document.description) == 0:
                 continue
 
             chunk_split = semantic_chunk(
-                document["description"], max_chunk_size=4, overlap=1
+                document.description, max_chunk_size=4, overlap=1
             )
             for chunk in chunk_split:
                 all_chunks.append(chunk)
@@ -149,7 +150,7 @@ class ChunkedSemanticSearch(SemanticSearch):
 
         return self.chunk_embeddings
 
-    def load_or_create_chunk_embeddings(self, documents: List[dict]) -> NDArray:
+    def load_or_create_chunk_embeddings(self, documents: List[Movie]) -> NDArray:
         if os.path.exists(self.CHUNK_EMBEDDING_PATH) == False:
             return self.build_chunk_embeddings(documents)
 
@@ -163,10 +164,10 @@ class ChunkedSemanticSearch(SemanticSearch):
 
         self.documents = documents
         for doc in documents:
-            self.document_map[doc["id"]] = doc
+            self.document_map[doc.id] = doc
         return self.chunk_embeddings
 
-    def search_chunks(self, query: str, limit: int = 10) -> List[dict]:
+    def search_chunks(self, query: str, limit: int = 10) -> dict:
         if self.chunk_embeddings is None or self.chunk_metadata is None:
             raise ValueError(
                 "No chunk embeddings loaded. Call load_or_create_chunk_embeddings"
@@ -210,13 +211,13 @@ class ChunkedSemanticSearch(SemanticSearch):
             result.append(
                 {
                     "id": doc_id,
-                    "title": doc["title"],
-                    "document": doc["description"][:DOCUMENT_PREVIEW_LENGTH],
+                    "title": doc.title,
+                    "document": doc.description[:DOCUMENT_PREVIEW_LENGTH],
                     "score": round(score, SCORE_PRECISION),
                 }
             )
 
-        return result
+        return {"query": query, "result": result}
 
 
 def verify_model():

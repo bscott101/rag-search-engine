@@ -110,7 +110,8 @@ def main():
             embeddings = embed_chunks()
             print(f"Generated {len(embeddings)} chunked embeddings")
         case "search_chunked":
-            result = semantic_chunk_search(args.query, args.limit)
+            query_result = semantic_chunk_search(args.query, args.limit)
+            result = query_result["result"]
             for i, res in enumerate(result):
                 print(f"\n{i + 1}. {res["title"]} (score: {res['score']:.4f})")
                 print(f"   {res["document"]}...")
