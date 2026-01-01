@@ -193,14 +193,6 @@ class ChunkedSemanticSearch(SemanticSearch):
                 or score["score"] > document_scores[doc_index]
             ):
                 document_scores[doc_index] = score["score"]
-            """
-            try:
-                current_score = document_scores[score["movie_idx"]]
-                if score["score"] > current_score:
-                    document_scores[score["movie_idx"]] = score["score"]
-            except:
-                document_scores[score["movie_idx"]] = score["score"]
-            """
         sorted_scores = sorted(
             document_scores.items(), key=lambda x: x[1], reverse=True
         )
@@ -299,8 +291,15 @@ def fixed_size_chunking(
     return chunks
 
 
-def semantic_chunk(text: str, max_chunk_size: int = 4, overlap: int = 0):
-    chunks = re.split(r"(?<=[.!?])\s+", text)
+def semantic_chunk(text: str, max_chunk_size: int = 4, overlap: int = 0) -> List[str]:
+    strip_text = text.strip()
+    if not strip_text:
+        return []
+
+    chunks = re.split(r"(?<=[.!?])\s+", strip_text)
+    if len(chunks) == 1 and not text.endswith((".", "!", "?")):
+        chunks = [text]
+
     result = []
     i = 0
     n_sentences = len(chunks)
@@ -308,7 +307,14 @@ def semantic_chunk(text: str, max_chunk_size: int = 4, overlap: int = 0):
         chunk_sentences = chunks[i : i + max_chunk_size]
         if chunks and len(chunk_sentences) <= overlap:
             break
-        result.append(" ".join(chunk_sentences))
+
+        cleaned_sentences = []
+        for chunk_sentence in chunk_sentences:
+            cleaned_sentences.append(chunk_sentence.strip())
+        if not cleaned_sentences:
+            continue
+
+        result.append(" ".join(cleaned_sentences))
         i += max_chunk_size - overlap
     return result
 
