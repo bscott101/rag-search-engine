@@ -53,6 +53,9 @@ class InvertedIndex:
             self.index = pickle.load(f)
         with open(self.docmap_path, "rb") as f:
             self.docmap = pickle.load(f)
+            for doc_id, doc in self.docmap.items():
+                ## pylance is confused, is loaded as pydantic class
+                self.docmap[doc_id] = Movie(**doc)
         with open(self.tf_path, "rb") as f:
             self.term_frequencies = pickle.load(f)
         with open(self.doc_lengths_path, "rb") as f:
