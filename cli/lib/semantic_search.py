@@ -16,6 +16,7 @@ from .search_utils import (
     SCORE_PRECISION,
     DOCUMENT_PREVIEW_LENGTH,
     DEFAULT_SEARCH_LIMIT,
+    format_search_result,
 )
 
 MOVIE_EMBEDDINGS_PATH = os.path.join(CACHE_DIR, "movie_embeddings.npy")
@@ -200,14 +201,13 @@ class ChunkedSemanticSearch(SemanticSearch):
         result = []
         for doc_id, score in sorted_scores[:limit]:
             doc = self.document_map[doc_id]
-            result.append(
-                {
-                    "id": doc_id,
-                    "title": doc.title,
-                    "document": doc.description[:DOCUMENT_PREVIEW_LENGTH],
-                    "score": round(score, SCORE_PRECISION),
-                }
+            res = format_search_result(
+                doc_id,
+                doc.title,
+                doc.description[:DOCUMENT_PREVIEW_LENGTH],
+                score=round(score, SCORE_PRECISION),
             )
+            result.append(res)
 
         return {"query": query, "result": result}
 

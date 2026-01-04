@@ -12,6 +12,8 @@ from .search_utils import (
     BM25_B,
     CACHE_DIR,
     DEFAULT_SEARCH_LIMIT,
+    DOCUMENT_PREVIEW_LENGTH,
+    SCORE_PRECISION,
     format_search_result,
     load_movies,
     load_stopwords,
@@ -141,8 +143,8 @@ class InvertedIndex:
             formated_result = format_search_result(
                 doc_id=doc.id,
                 title=doc.title,
-                document=doc.description,
-                score=score,
+                document=doc.description[:DOCUMENT_PREVIEW_LENGTH],
+                score=round(score, SCORE_PRECISION),
             )
             result.append(formated_result)
         return result

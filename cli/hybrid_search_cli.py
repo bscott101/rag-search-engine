@@ -1,6 +1,6 @@
 import argparse
 
-from lib.hybird_search import semantic_chunk_search, normalize_scores
+from lib.hybird_search import semantic_chunk_search, normalize_scores, weighted_search
 from lib.search_utils import DEFAULT_SEMANTIC_LIMIT
 
 
@@ -31,8 +31,22 @@ def main() -> None:
         "scores", nargs="+", type=float, help="creates a list of scores"
     )
 
-    args = parser.parse_args()
+    weighted_search_command = subparsers.add_parser(
+        "weighted-search", help="Query that uses both bm25 and chunked semantic search"
+    )
+    weighted_search_command.add_argument("query", type=str, help="Query for search")
+    weighted_search_command.add_argument(
+        "--alpha",
+        nargs="?",
+        type=float,
+        default=0.5,
+        help="Configure value for weight between bm25 and semantic search",
+    )
+    weighted_search_command.add_argument(
+        "--limit", type=int, nargs="?", default=5, help="Number of results to return"
+    )
 
+    args = parser.parse_args()
     match args.command:
         case "search_chunked":
             query_result = semantic_chunk_search(args.query, args.limit)
@@ -45,6 +59,14 @@ def main() -> None:
             scores = normalize_scores(args.scores)
             for score in scores:
                 print(f"* {score:.4f}")
+
+        case "weighted-search":
+            result = weighted_search(args.query, args.alpha, args.limit)
+            for index, res in enumerate(result):
+                print(f"{index + 1}. {res['title']}")
+                print(f"    Hybrid Score: {res['hybrid']}")
+                print(f"    BM25: {res['bm25']}, Semantic: {res['semantic']}")
+                print(f"    {res['document']}...")
 
         case _:
             parser.print_help()
