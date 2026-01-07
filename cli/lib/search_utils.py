@@ -4,6 +4,7 @@ from typing import Any, List
 from .schemas import Movies, Movie
 
 DEFAULT_SEARCH_LIMIT = 5
+DOCUMENT_PREVIEW_LENGTH = 100
 SCORE_PRECISION = 3
 
 BM25_K1 = 1.5
@@ -16,10 +17,9 @@ STOPWORDS_PATH = os.path.join(PROJECT_ROOT, "data", "stopwords.txt")
 CACHE_DIR = os.path.join(PROJECT_ROOT, "cache")
 
 DEFAULT_CHUNK_SIZE = 200
-DEFAULT_CHUNK_OVERLAP = 0
-
+DEFAULT_CHUNK_OVERLAP = 1
+DEFAULT_SEMANTIC_CHUNK_SIZE = 4
 DEFAULT_SEMANTIC_LIMIT = 5
-DOCUMENT_PREVIEW_LENGTH = 100
 
 
 def load_movies() -> List[Movie]:

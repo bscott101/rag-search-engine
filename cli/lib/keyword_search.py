@@ -56,8 +56,9 @@ class InvertedIndex:
         with open(self.docmap_path, "rb") as f:
             self.docmap = pickle.load(f)
             for doc_id, doc in self.docmap.items():
-                ## pylance is confused, is loaded as pydantic class
-                self.docmap[doc_id] = Movie(**doc)
+                if type(doc) != Movie:
+                    ## pylance is confused, is loaded as pydantic class
+                    self.docmap[doc_id] = Movie(**doc)
         with open(self.tf_path, "rb") as f:
             self.term_frequencies = pickle.load(f)
         with open(self.doc_lengths_path, "rb") as f:
@@ -111,9 +112,13 @@ class InvertedIndex:
         self, doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B
     ) -> float:
         tf = self.get_tf(doc_id, term)
-        length_norm = (
-            1 - b + b * (self.doc_lengths[doc_id] / self.__get_avg_doc_length())
-        )
+        doc_length = self.doc_lengths.get(doc_id, 0)
+        avg_doc_length = self.__get_avg_doc_length()
+        if avg_doc_length > 0:
+            length_norm = 1 - b + b * (doc_length / avg_doc_length)
+        else:
+            length_norm = 1
+
         return (tf * (k1 + 1)) / (tf + k1 * length_norm)
 
     def get_tf_idf(self, doc_id: int, term: str) -> float:
@@ -122,23 +127,24 @@ class InvertedIndex:
         return tf * idf
 
     def bm25(self, doc_id: int, term: str) -> float:
-        return self.get_bm25_tf(doc_id, term) * self.get_bm25_idf(term)
+        tf_component = self.get_bm25_tf(doc_id, term)
+        idf_component = self.get_bm25_idf(term)
+        return tf_component * idf_component
 
     def bm25_search(self, query: str, limit: int) -> list[dict[str, Any]]:
-        tokens = tokenize_text(query)
+        query_tokens = tokenize_text(query)
 
         doc_scores = {}
         for doc_id in self.docmap:
             score = 0.0
-            for token in tokens:
+            for token in query_tokens:
                 score += self.bm25(doc_id, token)
             doc_scores[doc_id] = score
-        sorted_scores = sorted(
-            doc_scores.items(), key=lambda item: item[1], reverse=True
-        )
+
+        sorted_docs = sorted(doc_scores.items(), key=lambda item: item[1], reverse=True)
 
         result = []
-        for doc_id, score in sorted_scores[:limit]:
+        for doc_id, score in sorted_docs[:limit]:
             doc = self.docmap[doc_id]
             formated_result = format_search_result(
                 doc_id=doc.id,

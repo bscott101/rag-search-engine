@@ -9,6 +9,7 @@ from lib.semantic_search import (
     chunk_text,
     embed_chunks,
     semantic_chunk_search,
+    semantic_build,
 )
 from lib.search_utils import (
     DEFAULT_CHUNK_SIZE,
@@ -20,6 +21,8 @@ from lib.search_utils import (
 def main():
     parser = argparse.ArgumentParser(description="Semantic Search CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    subparsers.add_parser("build", help="Create the embeddings")
 
     subparsers.add_parser("verify", help="Verify the model is able to be loaded")
     emb_text = subparsers.add_parser("embed_text", help="Embeds a text string")
@@ -95,8 +98,10 @@ def main():
             embed_text(args.text)
         case "verify_embeddings":
             verify_embeddings()
-        case "embed_query":
+        case "embedquery":
             embed_query_text(args.query)
+        case "build":
+            semantic_build()
         case "search":
             results = search_command(args.query, args.limit)
             for index, result in enumerate(results):
