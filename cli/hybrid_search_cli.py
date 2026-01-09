@@ -1,6 +1,11 @@
 import argparse
 
-from lib.hybird_search import semantic_chunk_search, normalize_scores, weighted_search
+from lib.hybird_search import (
+    semantic_chunk_search,
+    normalize_scores,
+    weighted_search,
+    rrf_search_command,
+)
 from lib.search_utils import DEFAULT_SEMANTIC_LIMIT
 
 
@@ -46,6 +51,19 @@ def main() -> None:
         "--limit", type=int, nargs="?", default=5, help="Number of results to return"
     )
 
+    rff_command = subparsers.add_parser("rrf-search", help="Recipical Rank fusion")
+    rff_command.add_argument("query", type=str, help="Query for the search")
+    rff_command.add_argument(
+        "-k",
+        type=int,
+        default=60,
+        nargs="?",
+        help="K: parameter to control the weight to top-ranked results",
+    )
+    rff_command.add_argument(
+        "--limit", type=int, nargs="?", help="Number of results to return", default=5
+    )
+
     args = parser.parse_args()
     match args.command:
         case "search_chunked":
@@ -66,6 +84,16 @@ def main() -> None:
                 print(f"{index + 1}. {res['title']}")
                 print(f"    Hybrid Score: {res['hybrid']}")
                 print(f"    BM25: {res['bm25']}, Semantic: {res['semantic']}")
+                print(f"    {res['document']}...")
+
+        case "rrf-search":
+            results = rrf_search_command(args.query, args.k, args.limit)
+            for index, res in enumerate(results, start=1):
+                print(f"{index}. {res['title']}")
+                print(f"    RRF Score: {res['rrf_score']}")
+                print(
+                    f"    BM25 Rank: {res['bm25_rank']}, Semantic Rank: {res['semantic_rank']}"
+                )
                 print(f"    {res['document']}...")
 
         case _:
