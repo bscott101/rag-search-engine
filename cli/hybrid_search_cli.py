@@ -64,7 +64,10 @@ def main() -> None:
         "--limit", type=int, nargs="?", help="Number of results to return", default=5
     )
     rff_command.add_argument(
-        "--enhance", type=str, choices=["spell"], help="Query enhancment method"
+        "--enhance",
+        type=str,
+        choices=["spell", "rewrite", "expand"],
+        help="Query enhancment method",
     )
 
     args = parser.parse_args()
