@@ -63,6 +63,9 @@ def main() -> None:
     rff_command.add_argument(
         "--limit", type=int, nargs="?", help="Number of results to return", default=5
     )
+    rff_command.add_argument(
+        "--enhance", type=str, choices=["spell"], help="Query enhancment method"
+    )
 
     args = parser.parse_args()
     match args.command:
@@ -87,8 +90,14 @@ def main() -> None:
                 print(f"    {res['document']}...")
 
         case "rrf-search":
-            results = rrf_search_command(args.query, args.k, args.limit)
-            for index, res in enumerate(results, start=1):
+            result = rrf_search_command(args.query, args.k, args.limit, args.enhance)
+
+            if result["enhanced_query"]:
+                print(
+                    f"Enhanced query ({result['enhance_method']}): '{result['original_query']}' -> '{result['enhanced_query']}'\n"
+                )
+
+            for index, res in enumerate(result["results"], start=1):
                 print(f"{index}. {res['title']}")
                 print(f"    RRF Score: {res['rrf_score']}")
                 print(

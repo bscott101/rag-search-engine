@@ -1,6 +1,8 @@
 import os
+from typing import Optional
 
 from .keyword_search import InvertedIndex
+from .query_enhancement import enhance_query
 from .semantic_search import ChunkedSemanticSearch
 from .schemas import Movie
 from .keyword_search import DEFAULT_SEARCH_LIMIT, load_movies
@@ -149,6 +151,26 @@ def weighted_search(query: str, alpha: float = 0.5, limit: int = 5) -> List[dict
     return model.weighted_search(query, alpha, limit)
 
 
-def rrf_search_command(query: str, k: int = 60, limit: int = 5) -> List[dict]:
+def rrf_search_command(
+    query: str,
+    k: int = 60,
+    limit: int = 5,
+    enhance: Optional[str] = None,
+) -> dict:
     model = HybirdSearch(load_movies())
-    return model.rrf_search(query, k, limit)
+
+    original_query = query
+    enhanced_query = None
+    if enhance:
+        enhanced_query = enhance_query(query, method=enhance)
+
+    results = model.rrf_search(query, k, limit)
+
+    return {
+        "original_query": original_query,
+        "enhanced_query": enhanced_query,
+        "enhance_method": enhance,
+        "query": query,
+        "k": k,
+        "results": results,
+    }

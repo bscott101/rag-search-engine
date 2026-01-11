@@ -7,7 +7,7 @@ from typing import List, Tuple
 from numpy.typing import NDArray
 from sentence_transformers import SentenceTransformer
 
-from .schemas import Movies, Movie
+from .schemas import Movie
 from .search_utils import (
     CACHE_DIR,
     load_movies,
