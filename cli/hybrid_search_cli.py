@@ -7,6 +7,7 @@ from lib.hybird_search import (
     rrf_search_command,
 )
 from lib.search_utils import DEFAULT_SEMANTIC_LIMIT
+from lib.query_enhancement import rerank_method
 
 
 def main() -> None:
@@ -69,6 +70,12 @@ def main() -> None:
         choices=["spell", "rewrite", "expand"],
         help="Query enhancment method",
     )
+    rff_command.add_argument(
+        "--rerank-method",
+        help="Method to rerank the returned query with LLMs",
+        type=str,
+        choices=["individual"],
+    )
 
     args = parser.parse_args()
     match args.command:
@@ -93,20 +100,37 @@ def main() -> None:
                 print(f"    {res['document']}...")
 
         case "rrf-search":
-            result = rrf_search_command(args.query, args.k, args.limit, args.enhance)
+            limit = args.limit
+            if args.rerank_method == "individual":
+                limit = limit * 5
+            result = rrf_search_command(
+                args.query, k=args.k, limit=limit, enhance=args.enhance
+            )
 
             if result["enhanced_query"]:
                 print(
                     f"Enhanced query ({result['enhance_method']}): '{result['original_query']}' -> '{result['enhanced_query']}'\n"
                 )
 
-            for index, res in enumerate(result["results"], start=1):
-                print(f"{index}. {res['title']}")
-                print(f"    RRF Score: {res['rrf_score']}")
-                print(
-                    f"    BM25 Rank: {res['bm25_rank']}, Semantic Rank: {res['semantic_rank']}"
-                )
-                print(f"    {res['document']}...")
+            if args.rerank_method == "individual":
+                new_result = rerank_method(result["original_query"], result["results"])
+                for index, res in enumerate(new_result, start=1):
+                    print(f"{index}. {res['title']}")
+                    print(f"    Rerank Score: {res['rerank_score']}/10")
+                    print(f"    RRF Score: {res['rrf_score']}")
+                    print(
+                        f"    BM25 Rank: {res['bm25_rank']}, Semantic Rank: {res['semantic_rank']}"
+                    )
+                    print(f"    {res['document']}...")
+
+            else:
+                for index, res in enumerate(result["results"], start=1):
+                    print(f"{index}. {res['title']}")
+                    print(f"    RRF Score: {res['rrf_score']}")
+                    print(
+                        f"    BM25 Rank: {res['bm25_rank']}, Semantic Rank: {res['semantic_rank']}"
+                    )
+                    print(f"    {res['document']}...")
 
         case _:
             parser.print_help()

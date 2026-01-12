@@ -222,7 +222,7 @@ class ChunkedSemanticSearch(SemanticSearch):
             res = format_search_result(
                 doc_id,
                 doc.title,
-                doc.description[:DOCUMENT_PREVIEW_LENGTH],
+                doc.description,
                 score=round(score, SCORE_PRECISION),
             )
             result.append(res)
