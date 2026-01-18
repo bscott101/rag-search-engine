@@ -6,13 +6,12 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from nltk.stem import PorterStemmer
-from .schemas import Movies, Movie
+from .schemas import Movie
 from .search_utils import (
     BM25_K1,
     BM25_B,
     CACHE_DIR,
     DEFAULT_SEARCH_LIMIT,
-    DOCUMENT_PREVIEW_LENGTH,
     SCORE_PRECISION,
     format_search_result,
     load_movies,
@@ -149,7 +148,7 @@ class InvertedIndex:
             formated_result = format_search_result(
                 doc_id=doc.id,
                 title=doc.title,
-                document=doc.description[:DOCUMENT_PREVIEW_LENGTH],
+                document=doc.description,
                 score=round(score, SCORE_PRECISION),
             )
             result.append(formated_result)
