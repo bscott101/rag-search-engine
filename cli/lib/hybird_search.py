@@ -35,8 +35,7 @@ class HybirdSearch:
         chunked_search = self._semantic_chunk_search(query, safe_limit)
         results: dict[str, FormattedResults] = {}
 
-        bm25_scores = [x.score for x in bm25_search]
-        bm25_norm_scores = normalise_search_results(bm25_scores)
+        bm25_norm_scores = normalise_search_results(bm25_search)
         for doc in bm25_norm_scores:
             if doc.doc_id not in results:
                 results[doc.doc_id] = FormattedResults(
@@ -47,13 +46,12 @@ class HybirdSearch:
                     bm25_score=doc.norm_score,
                 )
             if (
-                doc.norm_score > results[doc.doc_id].bm25_score
-                or results[doc.doc_id] is None
+                results[doc.doc_id].bm25_score is None
+                or doc.norm_score > results[doc.doc_id].bm25_score
             ):
                 results[doc.doc_id].bm25_score = doc.norm_score
 
-        chunked_scores = [x.score for x in chunked_search]
-        chunked_norm_scores = normalise_search_results(chunked_scores)
+        chunked_norm_scores = normalise_search_results(chunked_search)
         for doc in chunked_norm_scores:
             if doc.doc_id not in results:
                 results[doc.doc_id] = FormattedResults(
@@ -64,8 +62,8 @@ class HybirdSearch:
                     semantic_score=doc.norm_score,
                 )
             if (
-                doc.norm_score > results[doc.doc_id].semantic_score
-                or results[doc.doc_id] is None
+                results[doc.doc_id].semantic_score is None
+                or doc.norm_score > results[doc.doc_id].semantic_score
             ):
                 results[doc.doc_id].semantic_score = doc.norm_score
 
@@ -173,7 +171,9 @@ def hybrid_score(bm25_score: float, semantic_score: float, alpha: float = 0.5):
     return alpha * bm25_score + (1 - alpha) * semantic_score
 
 
-def weighted_search(query: str, alpha: float = 0.5, limit: int = 5) -> List[dict]:
+def weighted_search(
+    query: str, alpha: float = 0.5, limit: int = 5
+) -> List[FormattedResults]:
     model = HybirdSearch(load_movies())
     return model.weighted_search(query, alpha, limit)
 
