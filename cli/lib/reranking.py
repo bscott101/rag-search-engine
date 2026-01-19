@@ -80,7 +80,7 @@ class LLMModel:
 MODEL = LLMModel("data/models/gemma-3-4b-it", True)
 
 
-def rerank_query(query: str, doc: dict) -> str:
+def individual_query(query: str, doc: dict) -> str:
     prompt = f"""Rate how well this movie matches the search query.
 
 Query: "{query}"
@@ -95,30 +95,25 @@ Rate 0-10 (10 = perfect match).
 Give me ONLY the number in your response, no other text or explanation.
 
 Score:"""
-    # response = client.models.generate_content(model=model, contents=prompt)
-    # corrected = (response.text or "").strip().strip('"')
-    # return corrected if corrected else query
-    response = MODEL.generate_content(prompt)
-    corrected = (response or "").strip().strip('"')
-    return corrected if corrected else query
+
+    return MODEL.generate_content(prompt)
 
 
-def rerank_method(query: str, results: list[dict]) -> list[dict]:
+def rerank_individual(query: str, results: list[dict]) -> list[dict]:
     for doc in results:
-        score = rerank_query(query, doc)
+        score = individual_query(query, doc)
         doc["rerank_score"] = float(score)
 
     return sorted(results, key=lambda x: x["rerank_score"], reverse=True)
 
 
-def rerank_batch_method(query: str, results: list[dict]) -> list[dict]:
+def rerank_batch(query: str, documents: list[dict]) -> list[dict]:
     doc_list_str = []
 
-    for id, doc in enumerate(results):
+    for doc in documents:
         print(f'id: {id} title: {doc["title"]}')
         doc_list_str.append(
-            # f"ID: {id} Title: {doc['title']} Description: {doc['document'][:400]}"
-            f"{doc['document'][:300]}"
+            f"ID: {doc["doc_id"]} Title: {doc['title']} Description: {doc['document'][:400]}"
         )
 
     prompt = f"""Rank these movies by relevance to the search query.
@@ -139,14 +134,26 @@ Return ONLY the IDs in order of relevance (best match first). Return a valid JSO
     )
     res = json.loads(response)
 
-    if len(res) > len(results):
-        res = res[: len(results)]
+    if len(res) > len(documents):
+        res = res[: len(documents)]
 
-    if len(res) < len(results):
-        diff = len(results) - len(res)
+    if len(res) < len(documents):
+        diff = len(documents) - len(res)
         res.extend([9999 for _ in range(0, diff)])
 
     for id, score in enumerate(res):
-        results[id]["rerank_batch"] = score
+        documents[id]["rerank_batch"] = score
 
-    return sorted(results, key=lambda x: x["rerank_batch"])
+    return sorted(documents, key=lambda x: x["rerank_batch"])
+
+
+def rerank_command(
+    query: str, documents: list[dict], method: str = "batch", limit: int = 5
+) -> list[dict]:
+    if method == "individual":
+        return rerank_individual(query, documents, limit)
+
+    if method == "batch":
+        return rerank_batch(query, documents, limit)
+
+    return documents[:limit]

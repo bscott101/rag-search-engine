@@ -4,8 +4,10 @@ from typing import Optional
 from .keyword_search import InvertedIndex
 from .query_enhancement import enhance_query
 from .semantic_search import ChunkedSemanticSearch
-from .schemas import Movie
+from .schemas import Movie, FormattedResults
 from .keyword_search import DEFAULT_SEARCH_LIMIT, load_movies
+from .search_utils import SEARCH_MULTIPLIER
+from .reranking import rerank_command
 
 from typing import List
 
@@ -25,94 +27,108 @@ class HybirdSearch:
         self.idx.load()
         return self.idx.bm25_search(query, limit)
 
-    def weighted_search(self, query: str, alpha: float = 0.5, limit: int = 5):
+    def weighted_search(
+        self, query: str, alpha: float = 0.5, limit: int = 5
+    ) -> List[FormattedResults]:
         safe_limit = limit * 500
         bm25_search = self._bm25_search(query, safe_limit)
         chunked_search = self._semantic_chunk_search(query, safe_limit)
+        results: dict[str, FormattedResults] = {}
 
-        # sort the values so they match up
-        bm25_search_sorted = sorted(bm25_search, key=lambda x: x["id"])
-        chunked_search_sorted = sorted(chunked_search, key=lambda x: x["id"])
-
-        bm25_scores = [x["score"] for x in bm25_search_sorted]
-        bm25_norm_scores = normalize_scores(bm25_scores)
-
-        chunked_scores = [x["score"] for x in chunked_search_sorted]
-        chunked_norm_scores = normalize_scores(chunked_scores)
-
-        scores = []
-        doc_scores = {}
-        for index in range(0, len(bm25_norm_scores)):
-            if bm25_search_sorted[index]["id"] != chunked_search_sorted[index]["id"]:
-                raise ("Something fucked up")
-
-            doc = bm25_search_sorted[index]
-            bm25_score = bm25_norm_scores[index]
-            semantic_score = chunked_norm_scores[index]
-            hybird = hybrid_score(bm25_score, semantic_score, alpha)
-
-            scores.append((doc["id"], hybird))
-
-            doc_scores[doc["id"]] = {
-                "bm25": bm25_score,
-                "semantic": semantic_score,
-                "hybrid": hybird,
-                "title": doc["title"],
-                "document": doc["document"],
-            }
-        scores_sorted = sorted(scores, key=lambda x: x[1], reverse=True)[:limit]
-        return [doc_scores[id] for id, _ in scores_sorted]
-
-    def rrf_search(self, query, k, limit=10) -> List[dict]:
-        safe_limit = limit * 500
-        bm25_search = self._bm25_search(query, safe_limit)
-        bm25_sorted = sorted(bm25_search, key=lambda x: x["score"], reverse=True)
-
-        chunked_search = self._semantic_chunk_search(query, safe_limit)
-        chunked_sorted = sorted(chunked_search, key=lambda x: x["score"], reverse=True)
-
-        result = {}
-        for rank, bm25_res in enumerate(bm25_sorted, start=1):
-            doc_id = bm25_res["id"]
-            if doc_id not in result:
-                result[doc_id] = {
-                    "title": bm25_res["title"],
-                    "document": bm25_res["document"],
-                    "bm25_rank": rank,
-                    "semantic_rank": 0,
-                }
-            if result[doc_id]["bm25_rank"] > rank or result[doc_id]["bm25_rank"] == 0:
-                result[doc_id]["bm25_rank"] = rank
-
-        for rank, sem_res in enumerate(chunked_sorted, start=1):
-            doc_id = sem_res["id"]
-            if doc_id not in result:
-                result[doc_id] = {
-                    "title": sem_res["title"],
-                    "document": sem_res["document"],
-                    "bm25_rank": 0,
-                    "semantic_rank": rank,
-                }
+        bm25_scores = [x.score for x in bm25_search]
+        bm25_norm_scores = normalise_search_results(bm25_scores)
+        for doc in bm25_norm_scores:
+            if doc.doc_id not in results:
+                results[doc.doc_id] = FormattedResults(
+                    doc_id=doc.doc_id,
+                    title=doc.title,
+                    document=doc.document,
+                    score=doc.score,
+                    bm25_score=doc.norm_score,
+                )
             if (
-                result[doc_id]["semantic_rank"] > rank
-                or result[doc_id]["semantic_rank"] == 0
+                doc.norm_score > results[doc.doc_id].bm25_score
+                or results[doc.doc_id] is None
             ):
-                result[doc_id]["semantic_rank"] = rank
+                results[doc.doc_id].bm25_score = doc.norm_score
 
-        scores = []
-        for doc_id, res in result.items():
-            bm25_rrf = rrf_score(res["bm25_rank"], k=k)
-            sem_rrf = rrf_score(res["semantic_rank"], k=k)
+        chunked_scores = [x.score for x in chunked_search]
+        chunked_norm_scores = normalise_search_results(chunked_scores)
+        for doc in chunked_norm_scores:
+            if doc.doc_id not in results:
+                results[doc.doc_id] = FormattedResults(
+                    doc_id=doc.doc_id,
+                    title=doc.title,
+                    document=doc.document,
+                    score=doc.score,
+                    semantic_score=doc.norm_score,
+                )
+            if (
+                doc.norm_score > results[doc.doc_id].semantic_score
+                or results[doc.doc_id] is None
+            ):
+                results[doc.doc_id].semantic_score = doc.norm_score
+
+        hybird_scores: list[FormattedResults] = []
+        for _, doc in results.items():
+            score = hybrid_score(doc.bm25_score, doc.semantic_score, alpha)
+            doc.score = score
+            doc.hybird_score = score
+            hybird_scores.append(doc)
+
+        return sorted(hybird_scores, key=lambda x: x.hybird_score, reverse=True)
+
+    def rrf_search(self, query, k, limit=10) -> List[FormattedResults]:
+        safe_limit = limit * 500
+        bm25_search = self._bm25_search(query, safe_limit)
+        bm25_sorted = sorted(bm25_search, key=lambda x: x.score, reverse=True)
+
+        chunked_search = self._semantic_chunk_search(query, safe_limit)
+        chunked_sorted = sorted(chunked_search, key=lambda x: x.score, reverse=True)
+
+        results: dict[str, FormattedResults] = {}
+        for rank, doc in enumerate(bm25_sorted, start=1):
+            doc_id = doc.doc_id
+            if doc_id not in results:
+                results[doc.doc_id] = FormattedResults(
+                    doc_id=doc.doc_id,
+                    title=doc.title,
+                    document=doc.document,
+                    score=doc.score,
+                    bm25_rank=rank,
+                    bm25_score=doc.score,
+                )
+            if results[doc_id].bm25_rank > rank or results[doc.doc_id] is None:
+                results[doc_id].bm25_rank = rank
+
+        for rank, doc in enumerate(chunked_sorted, start=1):
+            doc_id = doc.doc_id
+            if doc_id not in results:
+                results[doc.doc_id] = FormattedResults(
+                    doc_id=doc.doc_id,
+                    title=doc.title,
+                    document=doc.document,
+                    score=doc.score,
+                    semantic_rank=rank,
+                    semantic_score=doc.score,
+                )
+            if results[doc_id].semantic_rank > rank or results[doc_id] is None:
+                results[doc_id].semantic_rank = rank
+
+        rff_results: list[FormattedResults] = []
+        for _, doc in results.items():
+            bm25_rrf = rrf_score(doc.bm25_rank, k=k)
+            sem_rrf = rrf_score(doc.semantic_rank, k=k)
+
             score = bm25_rrf + sem_rrf
-            res["rrf_score"] = score
-            scores.append((doc_id, score))
+            doc.rff_score = score
+            rff_results.append(doc)
 
-        scores_sorted = sorted(scores, key=lambda x: x[1], reverse=True)[:limit]
-        return [result[id] for id, _ in scores_sorted]
+        return sorted(rff_results, key=lambda x: x.rff_score, reverse=True)
 
     def _semantic_chunk_search(
         self, query: str, limit: int = DEFAULT_SEARCH_LIMIT
-    ) -> dict:
+    ) -> List[FormattedResults]:
         return self.semantic_search.search_chunks(query, limit)
 
 
@@ -125,7 +141,7 @@ def semantic_chunk_search(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> dict
     return model._semantic_chunk_search(query, limit)
 
 
-def normalize_scores(scores: list[float]) -> list[float]:
+def normalise_scores(scores: list[float]) -> list[float]:
     if not scores:
         return []
 
@@ -135,11 +151,22 @@ def normalize_scores(scores: list[float]) -> list[float]:
     if max_score == min_score:
         return [1.0] * len(scores)
 
-    normalized_scores = []
+    normalised_scores = []
     for s in scores:
-        normalized_scores.append((s - min_score) / (max_score - min_score))
+        normalised_scores.append((s - min_score) / (max_score - min_score))
+    return normalised_scores
 
-    return normalized_scores
+
+def normalise_search_results(results: list[FormattedResults]) -> List[FormattedResults]:
+    scores = []
+    for res in results:
+        scores.append(res.score)
+
+    norm_score = normalise_scores(scores)
+    for i, res in enumerate(results):
+        res.norm_score = norm_score[i]
+
+    return results
 
 
 def hybrid_score(bm25_score: float, semantic_score: float, alpha: float = 0.5):
@@ -156,6 +183,7 @@ def rrf_search_command(
     k: int = 60,
     limit: int = 5,
     enhance: Optional[str] = None,
+    rerank: Optional[str] = None,
 ) -> dict:
     model = HybirdSearch(load_movies())
 
@@ -163,8 +191,16 @@ def rrf_search_command(
     enhanced_query = None
     if enhance:
         enhanced_query = enhance_query(query, method=enhance)
+        query = enhanced_query
 
-    results = model.rrf_search(query, k, limit)
+    search_limit = limit * SEARCH_MULTIPLIER if rerank else limit
+    results = model.rrf_search(query, k, search_limit)
+
+    reank_flag = False
+    if rerank:
+        resutls = rerank_command(
+            query,
+        )
 
     return {
         "original_query": original_query,

@@ -7,14 +7,13 @@ from typing import List, Tuple
 from numpy.typing import NDArray
 from sentence_transformers import SentenceTransformer
 
-from .schemas import Movie
+from .schemas import Movie, FormattedResults
 from .search_utils import (
     CACHE_DIR,
     load_movies,
     DEFAULT_CHUNK_SIZE,
     DEFAULT_CHUNK_OVERLAP,
     SCORE_PRECISION,
-    DOCUMENT_PREVIEW_LENGTH,
     DEFAULT_SEARCH_LIMIT,
     DEFAULT_SEMANTIC_CHUNK_SIZE,
     format_search_result,
@@ -81,7 +80,7 @@ class SemanticSearch:
             self.document_map[doc.id] = doc
         return self.embeddings
 
-    def search(self, query: str, limit: int = 5) -> List[dict]:
+    def search(self, query: str, limit: int = 5) -> List[FormattedResults]:
         if self.embeddings is None or self.embeddings.size == 0:
             raise ValueError(
                 "No embeddings loaded. Call 'load_or_create_embeddings' first."
@@ -105,11 +104,12 @@ class SemanticSearch:
         result = []
         for score, doc in scores[:limit]:
             result.append(
-                {
-                    "score": score,
-                    "title": doc.title,
-                    "description": doc.description,
-                }
+                format_search_result(
+                    doc_id=doc.id,
+                    title=doc.title,
+                    document=doc.description,
+                    score=score,
+                )
             )
 
         return result
@@ -185,7 +185,7 @@ class ChunkedSemanticSearch(SemanticSearch):
 
         return self.build_chunk_embeddings(documents)
 
-    def search_chunks(self, query: str, limit: int = 10) -> list[dict]:
+    def search_chunks(self, query: str, limit: int = 10) -> List[FormattedResults]:
         if self.chunk_embeddings is None or self.chunk_metadata is None:
             raise ValueError(
                 "No chunk embeddings loaded. Call load_or_create_chunk_embeddings"
@@ -276,7 +276,7 @@ def cosine_similarity(vec1: NDArray[np.float32], vec2: NDArray[np.float32]) -> f
     return dot_product / (norm1 * norm2)
 
 
-def search_command(query: str, limit: int = 5) -> List[dict]:
+def search_command(query: str, limit: int = 5) -> List[FormattedResults]:
     model = SemanticSearch()
     documents = load_movies()
     model.load_or_create_embeddings(documents)
@@ -364,7 +364,9 @@ def chunk_text(
         print(f"{index + 1}. {chunk}")
 
 
-def semantic_chunk_search(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> dict:
+def semantic_chunk_search(
+    query: str, limit: int = DEFAULT_SEARCH_LIMIT
+) -> dict[str, str | List[FormattedResults]]:
     model = ChunkedSemanticSearch()
     documents = load_movies()
     model.load_or_create_chunk_embeddings(documents)

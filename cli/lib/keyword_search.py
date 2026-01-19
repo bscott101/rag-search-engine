@@ -6,7 +6,7 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from nltk.stem import PorterStemmer
-from .schemas import Movie
+from .schemas import Movie, FormattedResults
 from .search_utils import (
     BM25_K1,
     BM25_B,
@@ -130,7 +130,7 @@ class InvertedIndex:
         idf_component = self.get_bm25_idf(term)
         return tf_component * idf_component
 
-    def bm25_search(self, query: str, limit: int) -> list[dict[str, Any]]:
+    def bm25_search(self, query: str, limit: int) -> list[FormattedResults]:
         query_tokens = tokenize_text(query)
 
         doc_scores = {}
@@ -145,7 +145,7 @@ class InvertedIndex:
         result = []
         for doc_id, score in sorted_docs[:limit]:
             doc = self.docmap[doc_id]
-            formated_result = format_search_result(
+            formated_result = FormattedResults(
                 doc_id=doc.id,
                 title=doc.title,
                 document=doc.description,

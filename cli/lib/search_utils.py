@@ -1,11 +1,12 @@
 import json
 import os
 from typing import Any, List
-from .schemas import Movies, Movie
+from .schemas import Movies, Movie, FormattedResults
 
 DEFAULT_SEARCH_LIMIT = 5
 DOCUMENT_PREVIEW_LENGTH = 100
 SCORE_PRECISION = 3
+SEARCH_MULTIPLIER = 5
 
 BM25_K1 = 1.5
 BM25_B = 0.75
@@ -36,12 +37,12 @@ def load_stopwords() -> list[str]:
 
 def format_search_result(
     doc_id: int, title: str, document: str, score: float, **metadata: Any
-) -> dict[str, Any]:
+) -> FormattedResults:
 
-    return {
-        "id": doc_id,
-        "title": title,
-        "document": document,
-        "score": round(score, SCORE_PRECISION),
-        "metadata": metadata if metadata else {},
-    }
+    return FormattedResults(
+        doc_id=doc_id,
+        title=title,
+        document=document,
+        score=round(score, SCORE_PRECISION),
+        **metadata,
+    )
