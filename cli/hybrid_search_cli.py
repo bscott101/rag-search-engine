@@ -1,13 +1,13 @@
 import argparse
 
 from lib.hybird_search import (
-    normalize_scores,
     rrf_search_command,
     semantic_chunk_search,
     weighted_search,
+    normalise_scores,
 )
-from lib.reranking import rerank_method, rerank_batch_method
 from lib.search_utils import DEFAULT_SEMANTIC_LIMIT, DOCUMENT_PREVIEW_LENGTH
+from lib.schemas import FormattedResults
 
 
 def main() -> None:
@@ -87,17 +87,17 @@ def main() -> None:
                 print(f"   {res["document"]}...")
 
         case "normalize":
-            scores = normalize_scores(args.scores)
+            scores = normalise_scores(args.scores)
             for score in scores:
                 print(f"* {score:.4f}")
 
         case "weighted-search":
             result = weighted_search(args.query, args.alpha, args.limit)
-            for index, res in enumerate(result):
-                print(f"{index + 1}. {res['title']}")
-                print(f"    Hybrid Score: {res['hybrid']}")
-                print(f"    BM25: {res['bm25']}, Semantic: {res['semantic']}")
-                print(f"    {res['document']}...")
+            for index, res in enumerate(result[: args.limit]):
+                print(f"{index + 1}. {res.title}")
+                print(f"    Hybrid Score: {res.hybird_score}")
+                print(f"    BM25: {res.bm25_score}, Semantic: {res.semantic_score}")
+                print(f"    {res.document[:DOCUMENT_PREVIEW_LENGTH]}...")
 
         case "rrf-search":
             limit = args.limit
