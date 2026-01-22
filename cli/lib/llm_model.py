@@ -33,5 +33,5 @@ class LLMModel:
                 {"role": "user", "content": [{"type": "text", "text": prompt}]},
             ]
 
-        outputs = self.pipe(messages, max_new_tokens=200, temperature=temp)
+        outputs = self.pipe(messages, max_new_tokens=300, temperature=temp)
         return outputs[0]["generated_text"][-1]["content"].strip()

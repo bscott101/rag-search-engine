@@ -22,22 +22,22 @@ Score:"""
 
 
 def rerank_individual(query: str, results: list[dict], MODEL: LLMModel) -> list[dict]:
+    results = [x.model_dump() for x in results]
     for doc in results:
         score = individual_query(query, doc, MODEL)
-        doc["rerank_score"] = float(score)
+        doc["individual_score"] = float(score)
 
-    return sorted(results, key=lambda x: x["rerank_score"], reverse=True)
+    return sorted(results, key=lambda x: x["individual_score"], reverse=True)
 
 
 def rerank_batch(query: str, documents: list[dict], MODEL: LLMModel) -> list[dict]:
     doc_list_str = []
-
+    doc_map = {}
     for doc in documents:
-        print(f'id: {id} title: {doc["title"]}')
+        doc_map[doc["doc_id"]] = doc
         doc_list_str.append(
-            f"ID: {doc["doc_id"]} Title: {doc['title']} Description: {doc['document'][:400]}"
+            f"ID: {doc["doc_id"]} Title: {doc['title']} Description: {doc['document'][:200]}"
         )
-
     prompt = f"""Rank these movies by relevance to the search query.
 
 Query: "{query}"
@@ -48,25 +48,25 @@ Movies:
 Return ONLY the IDs in order of relevance (best match first). Return a valid JSON list, nothing else. For example:
 
 [1, 3, 4, 2]
+
+Just return the Raw List and nothing else.
 """
     # surely having an AI rank other AI items is not a good idea
     response = MODEL.generate_content(
         prompt,
         system_prompt="You are a movie critic",
     )
+    results = []
     res = json.loads(response)
+    for rank, doc_id in enumerate(res, start=1):
+        try:
+            doc = doc_map[doc_id]
+            doc["rerank_batch"] = rank
+            results.append(doc)
+        except Exception as e:
+            print(f"Error: {e}")
 
-    if len(res) > len(documents):
-        res = res[: len(documents)]
-
-    if len(res) < len(documents):
-        diff = len(documents) - len(res)
-        res.extend([9999 for _ in range(0, diff)])
-
-    for id, score in enumerate(res):
-        documents[id]["rerank_batch"] = score
-
-    return sorted(documents, key=lambda x: x["rerank_batch"])
+    return sorted(results, key=lambda x: x["rerank_batch"])
 
 
 def rerank_command(
@@ -75,9 +75,9 @@ def rerank_command(
     MODEL = LLMModel(complex=True)
 
     if method == "individual":
-        return rerank_individual(query, documents, limit, MODEL)
+        return rerank_individual(query, documents[:limit], MODEL)
 
     if method == "batch":
-        return rerank_batch(query, documents, limit, MODEL)
+        return rerank_batch(query, documents[:limit], MODEL)
 
-    return documents[:limit]
+    return documents

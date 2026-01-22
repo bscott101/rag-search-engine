@@ -76,7 +76,7 @@ class HybirdSearch:
 
         return sorted(hybird_scores, key=lambda x: x.hybird_score, reverse=True)
 
-    def rrf_search(self, query, k, limit=10) -> List[FormattedResults]:
+    def rrf_search(self, query, k, limit=10) -> List[dict]:
         safe_limit = limit * 500
         bm25_search = self._bm25_search(query, safe_limit)
         bm25_sorted = sorted(bm25_search, key=lambda x: x.score, reverse=True)
@@ -96,7 +96,7 @@ class HybirdSearch:
                     bm25_rank=rank,
                     bm25_score=doc.score,
                 )
-            if results[doc_id].bm25_rank > rank or results[doc.doc_id] is None:
+            if results[doc.doc_id].bm25_rank < 0 or results[doc_id].bm25_rank > rank:
                 results[doc_id].bm25_rank = rank
 
         for rank, doc in enumerate(chunked_sorted, start=1):
@@ -110,7 +110,10 @@ class HybirdSearch:
                     semantic_rank=rank,
                     semantic_score=doc.score,
                 )
-            if results[doc_id].semantic_rank > rank or results[doc_id] is None:
+            if (
+                results[doc_id].semantic_rank < 0
+                or results[doc_id].semantic_rank > rank
+            ):
                 results[doc_id].semantic_rank = rank
 
         rff_results: list[FormattedResults] = []
@@ -121,8 +124,8 @@ class HybirdSearch:
             score = bm25_rrf + sem_rrf
             doc.rff_score = score
             rff_results.append(doc)
-
-        return sorted(rff_results, key=lambda x: x.rff_score, reverse=True)
+        rff_results = [x.model_dump() for x in rff_results]
+        return sorted(rff_results, key=lambda x: x["rff_score"], reverse=True)[:limit]
 
     def _semantic_chunk_search(
         self, query: str, limit: int = DEFAULT_SEARCH_LIMIT
@@ -183,9 +186,10 @@ def rrf_search_command(
     k: int = 60,
     limit: int = 5,
     enhance: Optional[str] = None,
-    rerank: Optional[str] = None,
+    rerank_method: Optional[str] = None,
 ) -> dict:
-    model = HybirdSearch(load_movies())
+    documents = load_movies()
+    model = HybirdSearch(documents)
 
     original_query = query
     enhanced_query = None
@@ -193,13 +197,12 @@ def rrf_search_command(
         enhanced_query = enhance_query(query, method=enhance)
         query = enhanced_query
 
-    search_limit = limit * SEARCH_MULTIPLIER if rerank else limit
+    search_limit = limit * SEARCH_MULTIPLIER if rerank_method else limit
     results = model.rrf_search(query, k, search_limit)
 
-    reank_flag = False
-    if rerank:
-        resutls = rerank_command(
-            query,
+    if rerank_method:
+        results = rerank_command(
+            query, results, method=rerank_method, limit=search_limit
         )
 
     return {
@@ -208,5 +211,6 @@ def rrf_search_command(
         "enhance_method": enhance,
         "query": query,
         "k": k,
-        "results": results,
+        "rerank_method": rerank_method,
+        "results": results[:limit],
     }
