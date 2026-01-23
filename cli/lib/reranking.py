@@ -1,5 +1,7 @@
 import json
+import torch
 from .llm_model import LLMModel
+from sentence_transformers import CrossEncoder
 
 
 def individual_query(query: str, doc: dict, MODEL: LLMModel) -> str:
@@ -69,6 +71,25 @@ Just return the Raw List and nothing else.
     return sorted(results, key=lambda x: x["rerank_batch"])
 
 
+def cross_encoder_method(query: str, documents: list[dict]):
+    device = "cpu"
+    if torch.cuda.is_available():
+        device = "cuda"
+    if torch.mps.is_available():
+        device = "mps"
+    cross_encoder = CrossEncoder("cross-encoder/ms-marco-TinyBERT-L2-v2", device=device)
+
+    pairs = []
+    for doc in documents:
+        pairs.append([query, f"{doc.get('title', '')} - {doc.get('document', '')}"])
+
+    scores = cross_encoder.predict(pairs)
+    for i, doc in enumerate(documents):
+        doc["cross_encoder_score"] = scores[i]
+
+    return sorted(documents, key=lambda x: x["cross_encoder_score"], reverse=True)
+
+
 def rerank_command(
     query: str, documents: list[dict], method: str = "batch", limit: int = 5
 ) -> list[dict]:
@@ -79,5 +100,8 @@ def rerank_command(
 
     if method == "batch":
         return rerank_batch(query, documents[:limit], MODEL)
+
+    if method == "cross_encoder":
+        return cross_encoder_method(query, documents[:limit])
 
     return documents

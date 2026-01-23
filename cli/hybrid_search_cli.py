@@ -7,7 +7,6 @@ from lib.hybird_search import (
     normalise_scores,
 )
 from lib.search_utils import DEFAULT_SEMANTIC_LIMIT, DOCUMENT_PREVIEW_LENGTH
-from lib.schemas import FormattedResults
 
 
 def main() -> None:
@@ -74,7 +73,7 @@ def main() -> None:
         "--rerank-method",
         help="Method to rerank the returned query with LLMs",
         type=str,
-        choices=["individual", "batch"],
+        choices=["individual", "batch", "cross_encoder"],
     )
 
     args = parser.parse_args()
@@ -126,6 +125,10 @@ def main() -> None:
                     print(f"   Rerank Score: {res.get('rerank_score', 0):.3f}/10")
                 if "rerank_batch" in list(res.keys()):
                     print(f"   Rerank Rank: {res.get('rerank_batch', 0)}")
+                if "cross_encoder_score" in list(res.keys()):
+                    print(
+                        f"   Cross Encoder Score: {res.get('cross_encoder_score', 0)}"
+                    )
                 print(f"   RRF Score: {res['rff_score']}")
                 print(
                     f"   BM25 Rank: {res['bm25_rank']}, Semantic Rank: {res['semantic_rank']}"

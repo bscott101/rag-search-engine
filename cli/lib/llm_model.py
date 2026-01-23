@@ -6,7 +6,7 @@ class LLMModel:
     def __init__(
         self, model_path: str = "data/models/gemma-3-4b-it", complex: bool = False
     ):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = self._get_device()
         self.pipe = pipeline(
             "text-generation",
             model=model_path,
@@ -14,6 +14,14 @@ class LLMModel:
             device_map=self.device,
         )
         self.complex = complex
+
+    def _get_device(self) -> str:
+        if torch.cuda.is_available():
+            return "cuda"
+        if torch.mps.is_available():
+            return "mps"
+
+        return "cpu"
 
     def generate_content(
         self,
