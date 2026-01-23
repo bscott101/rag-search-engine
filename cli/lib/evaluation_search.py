@@ -43,7 +43,7 @@ def evaluation_search(eval_set: dict, limit: int = 5) -> list[dict]:
             continue
         relevant_docs = test["relevant_docs"]
         hybrid_model = HybirdSearch(load_movies())
-        rrf_scores = hybrid_model.rrf_search(query=query, k=k, limit=limit)[:limit]
+        rrf_scores = hybrid_model.rrf_search(query=query, k=60, limit=limit)[:limit]
         retrieved_docs = []
         for result in rrf_scores:
             title = result.get("title", "")

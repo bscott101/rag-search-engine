@@ -24,7 +24,7 @@ def main() -> None:
     limit = args.limit
     with open(EVAL_PATH, "r") as file:
         eval_data_set = json.load(file)
-    results = evaluation_search(eval_data_set, limit, args.k)
+    results = evaluation_search(eval_data_set, limit)
 
     print(f"k={limit}\n")
     for test_case in results:
