@@ -1,10 +1,11 @@
 import argparse
-
+from lib.evaluation_search import llm_evaluate
 from lib.hybird_search import (
     rrf_search_command,
     semantic_chunk_search,
     weighted_search,
     normalise_scores,
+    get_formatted_str,
 )
 from lib.search_utils import DEFAULT_SEMANTIC_LIMIT, DOCUMENT_PREVIEW_LENGTH
 
@@ -75,6 +76,9 @@ def main() -> None:
         type=str,
         choices=["individual", "batch", "cross_encoder"],
     )
+    rff_command.add_argument(
+        "--evaluate", action="store_true", help="Optional evaluation flag"
+    )
 
     args = parser.parse_args()
     match args.command:
@@ -106,6 +110,7 @@ def main() -> None:
                 limit=limit,
                 enhance=args.enhance,
                 rerank_method=args.rerank_method,
+                evaluate=args.evaluate,
             )
 
             if result["enhanced_query"]:
@@ -117,23 +122,19 @@ def main() -> None:
                 print(
                     f"Reranking top {len(result['results'])} results using {result['rerank_method']} method...\n"
                 )
-
+            formatted_results = []
             for i, res in enumerate(result["results"], start=1):
-                print(f'{i}. {res["title"]}')
+                formatted_result = get_formatted_str(res, i)
+                print(formatted_result)
+                formatted_results.append(formatted_result)
 
-                if "individual_score" in list(res.keys()):
-                    print(f"   Rerank Score: {res.get('rerank_score', 0):.3f}/10")
-                if "rerank_batch" in list(res.keys()):
-                    print(f"   Rerank Rank: {res.get('rerank_batch', 0)}")
-                if "cross_encoder_score" in list(res.keys()):
-                    print(
-                        f"   Cross Encoder Score: {res.get('cross_encoder_score', 0)}"
-                    )
-                print(f"   RRF Score: {res['rff_score']}")
-                print(
-                    f"   BM25 Rank: {res['bm25_rank']}, Semantic Rank: {res['semantic_rank']}"
-                )
-                print(f"   {res['document'][:DOCUMENT_PREVIEW_LENGTH]}...")
+            if args.evaluate:
+                print(f"Length of formatted results: {len(formatted_results)}")
+                eval_scores = llm_evaluate(args.query, formatted_results)
+                print(f"Length of eval results: {len(eval_scores)}")
+
+                for i, score in enumerate(eval_scores):
+                    print(f'{i + 1}. {result["results"][i]["title"]} {score}/3')
 
         case _:
             parser.print_help()

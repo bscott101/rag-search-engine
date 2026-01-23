@@ -6,7 +6,7 @@ from .query_enhancement import enhance_query
 from .semantic_search import ChunkedSemanticSearch
 from .schemas import Movie, FormattedResults
 from .keyword_search import DEFAULT_SEARCH_LIMIT, load_movies
-from .search_utils import SEARCH_MULTIPLIER
+from .search_utils import SEARCH_MULTIPLIER, DOCUMENT_PREVIEW_LENGTH
 from .reranking import rerank_command
 
 from typing import List
@@ -181,6 +181,7 @@ def rrf_search_command(
     limit: int = 5,
     enhance: Optional[str] = None,
     rerank_method: Optional[str] = None,
+    evaluate: Optional[bool] = False,
     documents: list[Movie] = load_movies(),
 ) -> dict:
     model = HybirdSearch(documents)
@@ -208,3 +209,25 @@ def rrf_search_command(
         "rerank_method": rerank_method,
         "results": results[:limit],
     }
+
+
+def get_formatted_str(res: dict, rank: int) -> str:
+    formatted_str = ""
+
+    formatted_str += f'{rank}. {res["title"]}\n'
+
+    if "individual_score" in list(res.keys()):
+        formatted_str += f"   Rerank Score: {res.get('rerank_score', 0):.3f}/10\n"
+    if "rerank_batch" in list(res.keys()):
+        formatted_str += f"   Rerank Rank: {res.get('rerank_batch', 0)}\n"
+    if "cross_encoder_score" in list(res.keys()):
+        formatted_str += (
+            f"   Cross Encoder Score: {res.get('cross_encoder_score', 0)}\n"
+        )
+    formatted_str += f"   RRF Score: {res['rff_score']}\n"
+    formatted_str += (
+        f"   BM25 Rank: {res['bm25_rank']}, Semantic Rank: {res['semantic_rank']}\n"
+    )
+    formatted_str += f"   {res['document'][:DOCUMENT_PREVIEW_LENGTH]}...\n"
+
+    return formatted_str
