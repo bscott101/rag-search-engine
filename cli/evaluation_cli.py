@@ -14,9 +14,9 @@ def main() -> None:
     )
 
     parser.add_argument(
-        "--top_k",
+        "--k",
         type=int,
-        default=5,
+        default=60,
         help="Number of results to evaluate (k for precision@k, recall@k)",
     )
 
@@ -24,15 +24,17 @@ def main() -> None:
     limit = args.limit
     with open(EVAL_PATH, "r") as file:
         eval_data_set = json.load(file)
-    results = evaluation_search(eval_data_set, limit, args.top_k)
+    results = evaluation_search(eval_data_set, limit, args.k)
 
     print(f"k={limit}\n")
     for test_case in results:
         print(f"- Query: {test_case["query"]}")
         print(f"  - Precision@{limit}: {test_case["precision"]:.4f}")
         print(f"  - Recall@{limit}: {test_case["recall"]:.4f}")
+        print(f"  - F1 Score: {test_case["f1-score"]:.4f}")
         print(f"  - Retrieved: {test_case["retrieved"]}")
         print(f"  - Relevant: {test_case["relevant"]}")
+        print()
 
 
 if __name__ == "__main__":

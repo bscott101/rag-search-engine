@@ -19,8 +19,8 @@ class FormattedResults(BaseModel):
     score: float
     norm_score: Optional[float] = None
     rff_score: Optional[float] = 0.0
-    bm25_score: Optional[float] = 0.0
-    bm25_rank: Optional[int] = -1
-    semantic_score: Optional[float] = 0.0
-    semantic_rank: Optional[int] = -1
+    bm25_score: Optional[float] = None
+    bm25_rank: Optional[int] = None
+    semantic_score: Optional[float] = None
+    semantic_rank: Optional[int] = None
     hybird_score: Optional[float] = None

@@ -76,19 +76,15 @@ class HybirdSearch:
 
         return sorted(hybird_scores, key=lambda x: x.hybird_score, reverse=True)
 
-    def rrf_search(self, query, k, limit=10) -> List[dict]:
-        safe_limit = limit * 500
-        bm25_search = self._bm25_search(query, safe_limit)
-        bm25_sorted = sorted(bm25_search, key=lambda x: x.score, reverse=True)
+    def rrf_search(self, query, k: int = 60, limit=10) -> List[dict]:
+        bm25_search = self._bm25_search(query, limit * 500)
+        chunked_search = self.semantic_search.search_chunks(query, limit * 500)
 
-        chunked_search = self._semantic_chunk_search(query, safe_limit)
-        chunked_sorted = sorted(chunked_search, key=lambda x: x.score, reverse=True)
-
-        results: dict[str, FormattedResults] = {}
-        for rank, doc in enumerate(bm25_sorted, start=1):
+        rrf_scores: dict[str, FormattedResults] = {}
+        for rank, doc in enumerate(bm25_search, start=1):
             doc_id = doc.doc_id
-            if doc_id not in results:
-                results[doc.doc_id] = FormattedResults(
+            if doc_id not in rrf_scores:
+                rrf_scores[doc.doc_id] = FormattedResults(
                     doc_id=doc.doc_id,
                     title=doc.title,
                     document=doc.document,
@@ -96,14 +92,14 @@ class HybirdSearch:
                     bm25_rank=rank,
                     bm25_score=doc.score,
                 )
-            if results[doc.doc_id].bm25_rank < 0 or results[doc_id].bm25_rank > rank:
-                results[doc_id].bm25_rank = rank
-                results[doc_id].rff_score += rrf_score(rank, k)
+            if rrf_scores[doc.doc_id].bm25_rank is None:
+                rrf_scores[doc_id].bm25_rank = rank
+                rrf_scores[doc_id].rff_score += rrf_score(rank, k)
 
-        for rank, doc in enumerate(chunked_sorted, start=1):
+        for rank, doc in enumerate(chunked_search, start=1):
             doc_id = doc.doc_id
-            if doc_id not in results:
-                results[doc.doc_id] = FormattedResults(
+            if doc_id not in rrf_scores:
+                rrf_scores[doc.doc_id] = FormattedResults(
                     doc_id=doc.doc_id,
                     title=doc.title,
                     document=doc.document,
@@ -111,19 +107,19 @@ class HybirdSearch:
                     semantic_rank=rank,
                     semantic_score=doc.score,
                 )
-            if (
-                results[doc_id].semantic_rank < 0
-                or results[doc_id].semantic_rank > rank
-            ):
-                results[doc_id].semantic_rank = rank
-                results[doc_id].rff_score += rrf_score(rank, k)
+            if rrf_scores[doc_id].semantic_rank is None:
+                rrf_scores[doc_id].semantic_rank = rank
+                rrf_scores[doc_id].rff_score += rrf_score(rank, k)
 
-        rff_results: list[FormattedResults] = []
-        for _, doc in results.items():
-            rff_results.append(doc)
+        sorted_items = sorted(
+            rrf_scores.items(), key=lambda x: x[1].rff_score, reverse=True
+        )
 
-        rff_results = [x.model_dump() for x in rff_results]
-        return sorted(rff_results, key=lambda x: x["rff_score"], reverse=True)[:limit]
+        rrf_results: list[FormattedResults] = []
+        for _, doc in sorted_items:
+            rrf_results.append(doc.model_dump())
+
+        return rrf_results[:limit]
 
     def _semantic_chunk_search(
         self, query: str, limit: int = DEFAULT_SEARCH_LIMIT
