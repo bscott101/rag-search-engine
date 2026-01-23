@@ -23,7 +23,7 @@ class HybirdSearch:
             self.idx.build()
             self.idx.save()
 
-    def _bm25_search(self, query: str, limit: int):
+    def _bm25_search(self, query: str, limit: int = DEFAULT_SEARCH_LIMIT):
         self.idx.load()
         return self.idx.bm25_search(query, limit)
 
@@ -98,6 +98,7 @@ class HybirdSearch:
                 )
             if results[doc.doc_id].bm25_rank < 0 or results[doc_id].bm25_rank > rank:
                 results[doc_id].bm25_rank = rank
+                results[doc_id].rff_score += rrf_score(rank, k)
 
         for rank, doc in enumerate(chunked_sorted, start=1):
             doc_id = doc.doc_id
@@ -115,15 +116,12 @@ class HybirdSearch:
                 or results[doc_id].semantic_rank > rank
             ):
                 results[doc_id].semantic_rank = rank
+                results[doc_id].rff_score += rrf_score(rank, k)
 
         rff_results: list[FormattedResults] = []
         for _, doc in results.items():
-            bm25_rrf = rrf_score(doc.bm25_rank, k=k)
-            sem_rrf = rrf_score(doc.semantic_rank, k=k)
-
-            score = bm25_rrf + sem_rrf
-            doc.rff_score = score
             rff_results.append(doc)
+
         rff_results = [x.model_dump() for x in rff_results]
         return sorted(rff_results, key=lambda x: x["rff_score"], reverse=True)[:limit]
 

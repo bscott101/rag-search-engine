@@ -219,11 +219,12 @@ class ChunkedSemanticSearch(SemanticSearch):
         result = []
         for doc_id, score in sorted_scores[:limit]:
             doc = self.document_map[doc_id]
-            res = format_search_result(
-                doc_id,
-                doc.title,
-                doc.description,
-                score=round(score, SCORE_PRECISION),
+            res = FormattedResults(
+                doc_id=doc.id,
+                title=doc.title,
+                document=doc.description,
+                score=score,
+                semantic_score=score,
             )
             result.append(res)
 

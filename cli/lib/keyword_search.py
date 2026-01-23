@@ -149,7 +149,8 @@ class InvertedIndex:
                 doc_id=doc.id,
                 title=doc.title,
                 document=doc.description,
-                score=round(score, SCORE_PRECISION),
+                score=score,
+                bm25_score=score,
             )
             result.append(formated_result)
         return result

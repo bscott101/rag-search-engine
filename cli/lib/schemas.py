@@ -18,7 +18,7 @@ class FormattedResults(BaseModel):
     document: str
     score: float
     norm_score: Optional[float] = None
-    rff_score: Optional[float] = None
+    rff_score: Optional[float] = 0.0
     bm25_score: Optional[float] = 0.0
     bm25_rank: Optional[int] = -1
     semantic_score: Optional[float] = 0.0
