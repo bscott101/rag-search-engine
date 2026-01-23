@@ -28,6 +28,7 @@ class LLMModel:
         prompt: str,
         system_prompt: str = "You are a helpful assistant.",
         temp: float = 0.3,
+        max_new_tokens=300,
     ):
         messages = [
             {"role": "user", "content": prompt},
@@ -41,5 +42,5 @@ class LLMModel:
                 {"role": "user", "content": [{"type": "text", "text": prompt}]},
             ]
 
-        outputs = self.pipe(messages, max_new_tokens=300, temperature=temp)
+        outputs = self.pipe(messages, max_new_tokens=max_new_tokens, temperature=temp)
         return outputs[0]["generated_text"][-1]["content"].strip()

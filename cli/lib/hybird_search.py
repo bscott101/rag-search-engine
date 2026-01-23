@@ -181,7 +181,6 @@ def rrf_search_command(
     limit: int = 5,
     enhance: Optional[str] = None,
     rerank_method: Optional[str] = None,
-    evaluate: Optional[bool] = False,
     documents: list[Movie] = load_movies(),
 ) -> dict:
     model = HybirdSearch(documents)

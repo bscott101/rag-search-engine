@@ -1,0 +1,86 @@
+from .hybird_search import HybirdSearch
+from .llm_model import LLMModel
+from .search_utils import DEFAULT_SEARCH_LIMIT, load_movies, SEARCH_MULTIPLIER
+
+
+def generate_answer(query: str, results: list[dict], limit: int) -> str:
+    MODEL = LLMModel(complex=True)
+
+    docs = []
+    for doc in results[:limit]:
+        docs.append(f"{doc["title"]}: {doc["document"]}")
+
+    prompt = f"""Answer the question or provide information based on the provided documents. This should be tailored to Hoopla users. Hoopla is a movie streaming service.
+
+Query: {query}
+
+Documents:
+{docs}
+
+Provide a comprehensive answer that addresses the query:"""
+    res = MODEL.generate_content(prompt, max_new_tokens=2_000)
+
+    return res
+
+
+def generate_summary(query: str, results: list[dict], limit: int):
+    MODEL = LLMModel(complex=True)
+
+    docs = []
+    for doc in results[:limit]:
+        docs.append(f"{doc["title"]}: {doc["document"]}")
+
+    prompt = f"""
+Provide information useful to this query by synthesizing information from multiple search results in detail.
+The goal is to provide comprehensive information so that users know what their options are.
+Your response should be information-dense and concise, with several key pieces of information about the genre, plot, etc. of each movie.
+This should be tailored to Hoopla users. Hoopla is a movie streaming service.
+Query: {query}
+Search Results:
+{docs}
+Provide a comprehensive 3–4 sentence answer that combines information from multiple sources:
+"""
+    res = MODEL.generate_content(prompt, max_new_tokens=2_000)
+
+    return res
+
+
+def rag(query: str, limit: int = DEFAULT_SEARCH_LIMIT):
+    hybird_search = HybirdSearch(load_movies())
+    search_results = hybird_search.rrf_search(
+        query, k=60, limit=limit * SEARCH_MULTIPLIER
+    )
+    del hybird_search
+    for doc in search_results:
+        print(f'title: {doc["title"]}  rrf_score: {doc["rff_score"]}')
+
+    response = generate_answer(query, search_results, limit)
+
+    return {
+        "query": query,
+        "search_results": search_results[:limit],
+        "response": response,
+    }
+
+
+def summarize(query: str, limit: int):
+    hybird_search = HybirdSearch(load_movies())
+    search_results = hybird_search.rrf_search(
+        query, k=60, limit=limit * SEARCH_MULTIPLIER
+    )
+
+    response = generate_summary(query, search_results, limit)
+
+    return {
+        "query": query,
+        "search_results": search_results[:limit],
+        "response": response,
+    }
+
+
+def rag_command(query: str, rag_action: str, limit: int = DEFAULT_SEARCH_LIMIT):
+    if rag_action == "rag":
+        return rag(query, limit)
+
+    if rag_action == "summarize":
+        return summarize(query, limit)
