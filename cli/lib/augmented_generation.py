@@ -1,6 +1,6 @@
 from .hybird_search import HybirdSearch
 from .llm_model import LLMModel
-from .search_utils import DEFAULT_SEARCH_LIMIT, load_movies, SEARCH_MULTIPLIER
+from .search_utils import DEFAULT_SEARCH_LIMIT, SEARCH_MULTIPLIER, load_movies
 
 
 def generate_answer(query: str, results: list[dict], limit: int) -> str:
@@ -63,7 +63,7 @@ def rag(query: str, limit: int = DEFAULT_SEARCH_LIMIT):
     }
 
 
-def summarize(query: str, limit: int):
+def summarize(query: str, limit: int) -> dict:
     hybird_search = HybirdSearch(load_movies())
     search_results = hybird_search.rrf_search(
         query, k=60, limit=limit * SEARCH_MULTIPLIER
@@ -78,9 +78,47 @@ def summarize(query: str, limit: int):
     }
 
 
-def rag_command(query: str, rag_action: str, limit: int = DEFAULT_SEARCH_LIMIT):
-    if rag_action == "rag":
-        return rag(query, limit)
+def generate_citation(query: str, results: list[dict], limit: int):
+    MODEL = LLMModel(complex=True)
 
-    if rag_action == "summarize":
-        return summarize(query, limit)
+    docs = []
+    for doc in results[:limit]:
+        docs.append(f"{doc["title"]}: {doc["document"]}")
+
+    prompt = f"""Answer the question or provide information based on the provided documents.
+
+This should be tailored to Hoopla users. Hoopla is a movie streaming service.
+
+If not enough information is available to give a good answer, say so but give as good of an answer as you can while citing the sources you have.
+
+Query: {query}
+
+Documents:
+{docs}
+
+Instructions:
+- Provide a comprehensive answer that addresses the query
+- Cite sources using [1], [2], etc. format when referencing information
+- If sources disagree, mention the different viewpoints
+- If the answer isn't in the documents, say "I don't have enough information"
+- Be direct and informative
+
+Answer:"""
+    res = MODEL.generate_content(prompt, max_new_tokens=2_000)
+
+    return res
+
+
+def citations(query: str, limit: int = 5) -> dict:
+    hybird_search = HybirdSearch(load_movies())
+    search_result = hybird_search.rrf_search(
+        query, k=60, limit=limit * SEARCH_MULTIPLIER
+    )
+
+    response = generate_citation(query, search_result, limit)
+
+    return {
+        "query": query,
+        "search_results": search_result[:limit],
+        "response": response,
+    }

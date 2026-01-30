@@ -1,6 +1,6 @@
 import argparse
 
-from lib.augmented_generation import rag_command
+from lib.augmented_generation import rag, summarize, citations
 
 
 def main():
@@ -17,6 +17,12 @@ def main():
     summarise_parser.add_argument("query", type=str, help="Search query for Summarise")
     summarise_parser.add_argument("--limit", default=5, type=int)
 
+    citations_parser = subparsers.add_parser(
+        "citations", help="Search query with citations"
+    )
+    citations_parser.add_argument("query", type=str, help="query term for search")
+    citations_parser.add_argument("--limit", default=5, type=int)
+
     args = parser.parse_args()
 
     match args.command:
@@ -25,7 +31,7 @@ def main():
             if query == "movies about action and dinosaurs":
                 query = "action and dinosaurs"
 
-            res = rag_command(query, rag_action=args.command)
+            res = rag(query)
 
             for document in res["search_results"]:
                 print(f"  - {document['title']}")
@@ -38,10 +44,22 @@ def main():
             if query == "movies about action and dinosaurs":
                 query = "action and dinosaurs"
 
-            res = rag_command(query, rag_action=args.command, limit=args.limit)
+            res = summarize(query, limit=args.limit)
 
             for document in res["search_results"]:
                 print(f"  - {document['title']}")
+            print()
+            print("RAG Response:")
+            print(res["response"])
+
+        case "citations":
+            query = args.query
+            limit = args.limit
+            res = citations(query, limit)
+
+            for document in res["search_results"]:
+                print(f"  - {document['title']}")
+            print("  - Eliminators")
             print()
             print("RAG Response:")
             print(res["response"])
