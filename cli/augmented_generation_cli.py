@@ -1,6 +1,6 @@
 import argparse
 
-from lib.augmented_generation import rag, summarize, citations
+from lib.augmented_generation import rag, summarize, citations, question
 
 
 def main():
@@ -22,6 +22,10 @@ def main():
     )
     citations_parser.add_argument("query", type=str, help="query term for search")
     citations_parser.add_argument("--limit", default=5, type=int)
+
+    question_parser = subparsers.add_parser("question", help="Question based on documents")
+    question_parser.add_argument("query", type=str, help='quetion to ask of the document')
+    question_parser.add_argument("--limit", type=int, default=5, help="Number of documents to search")
 
     args = parser.parse_args()
 
@@ -63,6 +67,18 @@ def main():
             print()
             print("RAG Response:")
             print(res["response"])
+
+        case "question":
+            query = args.query
+            limit = args.limit
+            res = question(query, limit)
+
+            for document in res["search_results"]:
+                print(f"  - {document['title']}")
+            print()
+            print("RAG Response:")
+            print(res["response"])
+
 
         case _:
             parser.print_help()

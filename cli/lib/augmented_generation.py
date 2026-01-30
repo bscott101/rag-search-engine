@@ -81,20 +81,18 @@ def summarize(query: str, limit: int) -> dict:
 def generate_citation(query: str, results: list[dict], limit: int):
     MODEL = LLMModel(complex=True)
 
-    docs = []
-    for doc in results[:limit]:
-        docs.append(f"{doc["title"]}: {doc["document"]}")
+    context = ""
+    for i, result in enumerate(results[:limit], start=1):
+        context += f"[{i}]: {result['title']}; {result['document']}\n\n"
 
     prompt = f"""Answer the question or provide information based on the provided documents.
-
-This should be tailored to Hoopla users. Hoopla is a movie streaming service.
 
 If not enough information is available to give a good answer, say so but give as good of an answer as you can while citing the sources you have.
 
 Query: {query}
 
 Documents:
-{docs}
+{context}
 
 Instructions:
 - Provide a comprehensive answer that addresses the query
@@ -122,3 +120,46 @@ def citations(query: str, limit: int = 5) -> dict:
         "search_results": search_result[:limit],
         "response": response,
     }
+
+
+def generate_question(query: str, results: list[dict], limit: int) -> str:
+    MODEL = LLMModel(complex=True)
+
+    context = ""
+    for i, result in enumerate(results[:limit], start=1):
+        context += f"[{i}]: {result['title']}; {result['document']}\n\n"
+
+    prompt = f"""Answer the user's question based on the provided movies.
+
+Question: {query}
+
+Documents:
+{context}
+
+Instructions:
+- Answer questions directly and concisely
+- Be casual and conversational
+- Don't be cringe or hype-y
+- Talk like a normal person would in a chat conversation
+
+Answer:"""
+
+    res = MODEL.generate_content(prompt, max_new_tokens=2_000)
+
+    return res
+
+
+def question(query: str, limit: int):
+    hybird_search = HybirdSearch(load_movies())
+    search_result = hybird_search.rrf_search(
+        query, k=60, limit=limit * SEARCH_MULTIPLIER
+    )
+
+    response = generate_question(query, search_result, limit)
+
+    return {
+        "query": query,
+        "search_results": search_result[:limit],
+        "response": response,
+    }
+
