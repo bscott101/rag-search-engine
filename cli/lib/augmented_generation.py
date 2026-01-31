@@ -4,7 +4,7 @@ from .search_utils import DEFAULT_SEARCH_LIMIT, SEARCH_MULTIPLIER, load_movies
 
 
 def generate_answer(query: str, results: list[dict], limit: int) -> str:
-    MODEL = LLMModel(complex=True)
+    MODEL = LLMModel()
 
     docs = []
     for doc in results[:limit]:
@@ -24,7 +24,7 @@ Provide a comprehensive answer that addresses the query:"""
 
 
 def generate_summary(query: str, results: list[dict], limit: int):
-    MODEL = LLMModel(complex=True)
+    MODEL = LLMModel()
 
     docs = []
     for doc in results[:limit]:
@@ -79,7 +79,7 @@ def summarize(query: str, limit: int) -> dict:
 
 
 def generate_citation(query: str, results: list[dict], limit: int):
-    MODEL = LLMModel(complex=True)
+    MODEL = LLMModel()
 
     context = ""
     for i, result in enumerate(results[:limit], start=1):
@@ -123,11 +123,11 @@ def citations(query: str, limit: int = 5) -> dict:
 
 
 def generate_question(query: str, results: list[dict], limit: int) -> str:
-    MODEL = LLMModel(complex=True)
+    MODEL = LLMModel()
 
     context = ""
     for i, result in enumerate(results[:limit], start=1):
-        context += f"[{i}]: {result['title']}; {result['document']}\n\n"
+        context += f"[{i}]: {result['title']}; {result['document'][:1_000]}\n\n"
 
     prompt = f"""Answer the user's question based on the provided movies.
 
@@ -162,4 +162,3 @@ def question(query: str, limit: int):
         "search_results": search_result[:limit],
         "response": response,
     }
-

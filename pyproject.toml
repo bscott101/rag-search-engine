@@ -10,6 +10,7 @@ dependencies = [
     "google-genai>=1.57.0",
     "nltk==3.9.1",
     "numpy>=2.3.4",
+    "pillow>=12.1.0",
     "pydantic>=2.12.4",
     "pylance>=0.38.3",
     "pyright>=1.1.407",
