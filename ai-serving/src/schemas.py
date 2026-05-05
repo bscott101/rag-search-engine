@@ -1,5 +1,5 @@
 import json
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 class GenerateContent(BaseModel):
     prompt: str
