@@ -24,7 +24,6 @@ Score:"""
 
 
 def rerank_individual(query: str, results: list[dict]) -> list[dict]:
-    results = [x.model_dump() for x in results]
     for doc in results:
         score = individual_query(query, doc)
         doc["individual_score"] = float(score)
