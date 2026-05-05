@@ -1,18 +1,12 @@
 
 import ray
-import torch
-import io
-
-from typing import Annotated
-from PIL import Image
 from ray import serve
 from ray.serve.handle import DeploymentHandle
-from fastapi import FastAPI, Body
-from transformers import pipeline
+from fastapi import FastAPI
 
-from models.gemma3 import Gemma3
-from models.clip import Clip
-from schemas.schemas import GenerateContent, ClipSearch, load_movies
+from src.models.gemma3 import Gemma3
+from src.models.clip import Clip
+from src.schemas import GenerateContent, ClipSearch, load_movies
 
 ray.init()
 serve.start()
@@ -36,7 +30,7 @@ class ModelRouter:
         return {"embedding": result.tolist()}
 
     @app.post("/clip/image-search/")
-    async def clip_embed_image(self, input: ClipSearch):
+    async def clip_image_search(self, input: ClipSearch):
         return  await self.clip.search_with_image.remote(**input.model_dump())
 
 

@@ -6,7 +6,7 @@ from ray import serve
 from PIL import Image
 from sentence_transformers import SentenceTransformer
 from numpy.typing import NDArray
-from schemas.schemas import Movie
+from src.schemas import Movie
 from typing import List
 
 @serve.deployment(ray_actor_options={"num_gpus": 0.2})

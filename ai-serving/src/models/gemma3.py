@@ -4,7 +4,7 @@ import base64
 from ray import serve
 from PIL import Image
 from transformers import pipeline
-from schemas.schemas import GenerateContent
+from src.schemas import GenerateContent
 
 @serve.deployment(ray_actor_options={"num_gpus": 0.8})
 class Gemma3:
@@ -27,7 +27,6 @@ class Gemma3:
 
         return "cpu"
     
-    #@app.post("/generate-content/")
     async def generate_content(self, input: GenerateContent):
         messages = []
 
