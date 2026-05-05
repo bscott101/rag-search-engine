@@ -11,6 +11,13 @@ class Movie(BaseModel):
 class Movies(BaseModel):
     movies: List[Movie]
 
+class GenerateContent(BaseModel):
+    prompt: str
+    system_prompt: str | None = "You are a helpful assistant"
+    temp: float | None = 0.3
+    max_new_tokens: int | None = 300
+    input_image: str | None = None
+
 
 class FormattedResults(BaseModel):
     doc_id: int

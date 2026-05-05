@@ -1,11 +1,9 @@
 from .hybird_search import HybirdSearch
-from .llm_model import LLMModel
+from .llm_model import llm_inference
 from .search_utils import DEFAULT_SEARCH_LIMIT, SEARCH_MULTIPLIER, load_movies
 
 
 def generate_answer(query: str, results: list[dict], limit: int) -> str:
-    MODEL = LLMModel()
-
     docs = []
     for doc in results[:limit]:
         docs.append(f"{doc["title"]}: {doc["document"]}")
@@ -18,14 +16,12 @@ Documents:
 {docs}
 
 Provide a comprehensive answer that addresses the query:"""
-    res = MODEL.generate_content(prompt, max_new_tokens=2_000)
+    res = llm_inference(prompt, max_new_tokens=2_000)
 
     return res
 
 
 def generate_summary(query: str, results: list[dict], limit: int):
-    MODEL = LLMModel()
-
     docs = []
     for doc in results[:limit]:
         docs.append(f"{doc["title"]}: {doc["document"]}")
@@ -40,7 +36,7 @@ Search Results:
 {docs}
 Provide a comprehensive 3–4 sentence answer that combines information from multiple sources:
 """
-    res = MODEL.generate_content(prompt, max_new_tokens=2_000)
+    res = llm_inference(prompt, max_new_tokens=2_000)
 
     return res
 
@@ -79,8 +75,6 @@ def summarize(query: str, limit: int) -> dict:
 
 
 def generate_citation(query: str, results: list[dict], limit: int):
-    MODEL = LLMModel()
-
     context = ""
     for i, result in enumerate(results[:limit], start=1):
         context += f"[{i}]: {result['title']}; {result['document']}\n\n"
@@ -102,7 +96,7 @@ Instructions:
 - Be direct and informative
 
 Answer:"""
-    res = MODEL.generate_content(prompt, max_new_tokens=2_000)
+    res = llm_inference(prompt, max_new_tokens=2_000)
 
     return res
 
@@ -123,8 +117,6 @@ def citations(query: str, limit: int = 5) -> dict:
 
 
 def generate_question(query: str, results: list[dict], limit: int) -> str:
-    MODEL = LLMModel()
-
     context = ""
     for i, result in enumerate(results[:limit], start=1):
         context += f"[{i}]: {result['title']}; {result['document'][:1_000]}\n\n"
@@ -144,7 +136,7 @@ Instructions:
 
 Answer:"""
 
-    res = MODEL.generate_content(prompt, max_new_tokens=2_000)
+    res = llm_inference(prompt, max_new_tokens=2_000)
 
     return res
 

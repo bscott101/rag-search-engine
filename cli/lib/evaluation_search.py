@@ -1,7 +1,7 @@
 import json
 from .hybird_search import HybirdSearch
 from .search_utils import load_movies
-from .llm_model import LLMModel
+from .llm_model import llm_inference
 
 
 def precision_at_k(
@@ -71,7 +71,6 @@ def evaluation_search(eval_set: dict, limit: int = 5) -> list[dict]:
 
 
 def llm_evaluate(query: str, results: list[dict]) -> list[int]:
-    MODEL = LLMModel(complex=True)
     prompt = f"""Rate how relevant each result is to this query on a 0-3 scale:
 
 Query: "{query}"
@@ -92,6 +91,6 @@ Return ONLY the scores in the same order you were given the documents. Return a 
 [2, 0, 3, 2, 1]
 
 Be sure not to return more scores than documents provided."""
-    response = MODEL.generate_content(prompt)
+    response = llm_inference(prompt)
     res = json.loads(response)
     return res

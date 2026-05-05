@@ -1,9 +1,8 @@
-from .llm_model import LLMModel
+from .llm_model import llm_inference
 from typing import Optional
 
 
 def spell_correct(query: str) -> str:
-    MODEL = LLMModel()
     prompt = f"""Fix any spelling errors in this movie search query.
 
 Only correct obvious typos. Don't change correctly spelled words.
@@ -13,13 +12,9 @@ Query: "{query}"
 If no errors, return the original query.
 Corrected:"""
 
-    return MODEL.generate_content(prompt)
-    # corrected = (response.text or "").strip().strip('"')
-    # return corrected if corrected else query
-
+    return llm_inference(prompt)
 
 def rewrite_query(query: str) -> str:
-    MODEL = LLMModel()
     prompt = f"""Rewrite this movie search query to be more specific and searchable.
 
 Original: "{query}"
@@ -39,11 +34,10 @@ Examples:
 
 Rewritten query:"""
     # response = client.models.generate_content(model=model, contents=prompt)
-    return MODEL.generate_content(prompt)
+    return llm_inference(prompt)
 
 
 def expand_query(query: str) -> str:
-    MODEL = LLMModel()
     prompt = f"""Expand this movie search query with related terms.
 
 Add synonyms and related concepts that might appear in movie descriptions.
@@ -58,7 +52,7 @@ Examples:
 
 Query: "{query}"
 """
-    return MODEL.generate_content(prompt)
+    return llm_inference(prompt)
 
 
 def enhance_query(query: str, method: Optional[str] = None) -> str:
@@ -73,7 +67,7 @@ def enhance_query(query: str, method: Optional[str] = None) -> str:
             return query
 
 
-def rerank_query(query: str, doc: dict, MODEL: LLMModel) -> str:
+def rerank_query(query: str, doc: dict) -> str:
     prompt = f"""Rate how well this movie matches the search query.
 
 Query: "{query}"
@@ -89,13 +83,12 @@ Give me ONLY the number in your response, no other text or explanation.
 
 Score:"""
 
-    return MODEL.generate_content(prompt)
+    return llm_inference(prompt)
 
 
 def rerank_method(query: str, results: list[dict]) -> list[dict]:
-    MODEL = LLMModel()
     for doc in results:
-        score = rerank_query(query, doc, MODEL=MODEL)
+        score = rerank_query(query, doc)
         doc["rerank_score"] = float(score)
 
     return sorted(results, key=lambda x: x["rerank_score"], reverse=True)
