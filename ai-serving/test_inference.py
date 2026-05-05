@@ -1,6 +1,6 @@
 import requests
 import base64
-from schemas.schemas import ClipSearch, GenerateContent
+from src.schemas import ClipSearch, GenerateContent
 from pprint import pprint
 
 ray_endpoint = "http://127.0.0.1:8000"
