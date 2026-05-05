@@ -18,6 +18,8 @@ class GenerateContent(BaseModel):
     max_new_tokens: int | None = 300
     input_image: str | None = None
 
+class ImageContent(BaseModel):
+    input_image: str
 
 class FormattedResults(BaseModel):
     doc_id: int

@@ -13,8 +13,6 @@ def main():
     response = describe_image_command(str(args.image), args.query)
 
     print(f"Rewritten query: {response}")
-    print("Total tokens:")
-
 
 
 def describe_image_command(image_path: str, query: str):

@@ -1,5 +1,5 @@
 import argparse
-from lib.multimodel_search import Clip
+from lib.multimodel_search import image_emded_search
 from lib.search_utils import DOCUMENT_PREVIEW_LENGTH
 from pathlib import Path
 
@@ -18,14 +18,12 @@ def main():
 
     match args.command:
         case "verify_image_embedding":
-            model = Clip()
-            emb = model.embed_image(args.image)
+            emb = image_emded_search(args.image, "embed")
 
-            print(f"Embedding shape: {emb.shape[0]} dimensions")
+            print(f"Embedding shape: {len(emb)} dimensions")
 
         case "image_search":
-            model = Clip()
-            result = model.search_with_image(args.image)
+            result = image_emded_search(args.image, "search")
             
             for i, res in enumerate(result[:3], start=1):
                 print(f"{i}. {res['title']} (similarity: {str(res['score'])[:5]})" )
