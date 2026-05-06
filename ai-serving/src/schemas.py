@@ -1,6 +1,7 @@
 import json
 from pydantic import BaseModel
 
+
 class GenerateContent(BaseModel):
     prompt: str
     system_prompt: str | None = "You are a helpful assistant"
@@ -29,6 +30,3 @@ def load_movies(file_path: str) -> list[Movie]:
         data = json.load(f)
         data = Movies(**data)
     return data.movies
-
-
-

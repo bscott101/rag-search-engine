@@ -6,6 +6,7 @@ from PIL import Image
 from transformers import pipeline
 from src.schemas import GenerateContent
 
+
 @serve.deployment(ray_actor_options={"num_gpus": 0.8})
 class Gemma3:
     def __init__(self, model_path: str = "./data/models/gemma-3-4b-it"):
@@ -26,15 +27,21 @@ class Gemma3:
             return "mps"
 
         return "cpu"
-    
+
     async def generate_content(self, input: GenerateContent):
         messages = []
 
         messages.append(
-            {"role": "system", "content": [{"type": "text", "text": input.system_prompt}]}
+            {
+                "role": "system",
+                "content": [{"type": "text", "text": input.system_prompt}],
+            }
         )
 
-        user_prompt = {"role": "user", "content": [{"type": "text", "text": input.prompt}]}
+        user_prompt = {
+            "role": "user",
+            "content": [{"type": "text", "text": input.prompt}],
+        }
 
         if input.input_image:
             image_data = base64.b64decode(input.input_image)
@@ -51,7 +58,9 @@ class Gemma3:
         else:
             messages.append(user_prompt)
             outputs = self.pipe(
-                text=messages, max_new_tokens=input.max_new_tokens, temperature=input.temp
+                text=messages,
+                max_new_tokens=input.max_new_tokens,
+                temperature=input.temp,
             )
 
         return {"response": outputs[0]["generated_text"][-1]["content"].strip()}

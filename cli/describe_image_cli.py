@@ -21,9 +21,8 @@ def describe_image_command(image_path: str, query: str):
 - Focus on movie-specific details (actors, scenes, style, etc.)
 - Return only the rewritten query, without any additional commentary"""
 
-    return llm_inference(
-        prompt=query, input_image=image_path, system_prompt=sys_prompt
-    )
+    return llm_inference(prompt=query, input_image=image_path, system_prompt=sys_prompt)
+
 
 if __name__ == "__main__":
     main()

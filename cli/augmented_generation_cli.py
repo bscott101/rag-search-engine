@@ -23,9 +23,15 @@ def main():
     citations_parser.add_argument("query", type=str, help="query term for search")
     citations_parser.add_argument("--limit", default=5, type=int)
 
-    question_parser = subparsers.add_parser("question", help="Question based on documents")
-    question_parser.add_argument("query", type=str, help='quetion to ask of the document')
-    question_parser.add_argument("--limit", type=int, default=5, help="Number of documents to search")
+    question_parser = subparsers.add_parser(
+        "question", help="Question based on documents"
+    )
+    question_parser.add_argument(
+        "query", type=str, help="quetion to ask of the document"
+    )
+    question_parser.add_argument(
+        "--limit", type=int, default=5, help="Number of documents to search"
+    )
 
     args = parser.parse_args()
 
@@ -78,7 +84,6 @@ def main():
             print()
             print("RAG Response:")
             print(res["response"])
-
 
         case _:
             parser.print_help()

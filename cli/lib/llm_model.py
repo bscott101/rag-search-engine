@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 from lib.schemas import GenerateContent
 
 load_dotenv()
-MODEL_SERVING=os.environ.get("MODEL_SERVING")
+MODEL_SERVING = os.environ.get("MODEL_SERVING")
+
 
 class LLMModel:
     def __init__(self, model_path: str = "./data/models/gemma-3-4b-it"):
@@ -54,16 +55,17 @@ class LLMModel:
             outputs = self.pipe(
                 images=raw_image,
                 text=messages,
-                max_new_tokens=max_new_tokens, 
-                temperature=temp
+                max_new_tokens=max_new_tokens,
+                temperature=temp,
             )
         else:
             messages.append(user_prompt)
             outputs = self.pipe(
                 text=messages, max_new_tokens=max_new_tokens, temperature=temp
             )
-        
+
         return outputs[0]["generated_text"][-1]["content"].strip()
+
 
 def llm_inference(
     prompt: str,
@@ -74,8 +76,10 @@ def llm_inference(
 ):
     if MODEL_SERVING == "LOCAL":
         model = LLMModel()
-        return model.generate_content(prompt, system_prompt, temp, max_new_tokens, input_image)
-    
+        return model.generate_content(
+            prompt, system_prompt, temp, max_new_tokens, input_image
+        )
+
     model_endpoint = os.environ.get("MODEL_ENDPOINT")
     gemma_path = os.environ.get("MODEL_GENERATE_CONTENT")
     if model_endpoint is None:
@@ -88,20 +92,22 @@ def llm_inference(
         )
 
     if input_image:
-        input_image = base64.b64encode(open(input_image, "rb").read()).decode('utf-8')
+        input_image = base64.b64encode(open(input_image, "rb").read()).decode("utf-8")
 
     result = requests.post(
         url=f"{model_endpoint}{gemma_path}",
         json=GenerateContent(
-            prompt=prompt, 
-            system_prompt=system_prompt, 
-            temp=temp, 
-            max_new_tokens=max_new_tokens, 
-            input_image=input_image
-        ).model_dump()
+            prompt=prompt,
+            system_prompt=system_prompt,
+            temp=temp,
+            max_new_tokens=max_new_tokens,
+            input_image=input_image,
+        ).model_dump(),
     )
 
     if result.status_code != 200:
-        raise Exception(f"Error model request, status_code: {result.status_code} error: {result.text}")
+        raise Exception(
+            f"Error model request, status_code: {result.status_code} error: {result.text}"
+        )
 
     return result.json()["response"]

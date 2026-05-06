@@ -14,6 +14,7 @@ Corrected:"""
 
     return llm_inference(prompt)
 
+
 def rewrite_query(query: str) -> str:
     prompt = f"""Rewrite this movie search query to be more specific and searchable.
 
