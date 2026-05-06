@@ -10,7 +10,7 @@ model = "gemini-2.0-flash-001"
 model = "gemini-3-flash-preview"
 
 if __name__ == "__main__":
-    prompt = "Why is Boot.dev such a great place to learn about RAG? Use one paragraph maximum."
+    prompt = "If I have two dollary doos and give you one, how many do I have?"
     response = client.models.generate_content(model=model, contents=prompt)
     assert response.usage_metadata is not None
     print(f"Prompt Tokens: {response.usage_metadata.prompt_token_count}")
