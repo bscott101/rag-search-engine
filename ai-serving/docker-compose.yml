@@ -1,0 +1,13 @@
+services:
+  rag-models:
+    container_name: rag-search-models
+    image: localhost/rag-models:v4
+    network_mode: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities:
+                - gpu

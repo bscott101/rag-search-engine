@@ -214,11 +214,10 @@ def get_formatted_str(res: dict, rank: int) -> str:
     formatted_str = ""
 
     formatted_str += f'{rank}. {res["title"]}\n'
-
     if "individual_score" in list(res.keys()):
-        formatted_str += f"   Rerank Score: {res.get('rerank_score', 0):.3f}/10\n"
+        formatted_str += f"   Re-rank Rank: {res.get('individual_score', 0):.3f}/10\n"
     if "rerank_batch" in list(res.keys()):
-        formatted_str += f"   Rerank Rank: {res.get('rerank_batch', 0)}\n"
+        formatted_str += f"   Re-rank Rank: {res.get('rerank_batch', 0)}\n"
     if "cross_encoder_score" in list(res.keys()):
         formatted_str += (
             f"   Cross Encoder Score: {res.get('cross_encoder_score', 0)}\n"

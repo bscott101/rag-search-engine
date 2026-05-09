@@ -110,7 +110,6 @@ def main() -> None:
                 limit=limit,
                 enhance=args.enhance,
                 rerank_method=args.rerank_method,
-                evaluate=args.evaluate,
             )
 
             if result["enhanced_query"]:

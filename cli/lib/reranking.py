@@ -1,10 +1,10 @@
 import json
 import torch
-from .llm_model import LLMModel
+from .llm_model import llm_inference
 from sentence_transformers import CrossEncoder
 
 
-def individual_query(query: str, doc: dict, MODEL: LLMModel) -> str:
+def individual_query(query: str, doc: dict) -> str:
     prompt = f"""Rate how well this movie matches the search query.
 
 Query: "{query}"
@@ -20,19 +20,18 @@ Give me ONLY the number in your response, no other text or explanation.
 
 Score:"""
 
-    return MODEL.generate_content(prompt)
+    return llm_inference(prompt)
 
 
-def rerank_individual(query: str, results: list[dict], MODEL: LLMModel) -> list[dict]:
-    results = [x.model_dump() for x in results]
+def rerank_individual(query: str, results: list[dict]) -> list[dict]:
     for doc in results:
-        score = individual_query(query, doc, MODEL)
+        score = individual_query(query, doc)
         doc["individual_score"] = float(score)
 
     return sorted(results, key=lambda x: x["individual_score"], reverse=True)
 
 
-def rerank_batch(query: str, documents: list[dict], MODEL: LLMModel) -> list[dict]:
+def rerank_batch(query: str, documents: list[dict]) -> list[dict]:
     doc_list_str = []
     doc_map = {}
     for doc in documents:
@@ -54,7 +53,7 @@ Return ONLY the IDs in order of relevance (best match first). Return a valid JSO
 Just return the Raw List and nothing else.
 """
     # surely having an AI rank other AI items is not a good idea
-    response = MODEL.generate_content(
+    response = llm_inference(
         prompt,
         system_prompt="You are a movie critic",
     )
@@ -93,13 +92,11 @@ def cross_encoder_method(query: str, documents: list[dict]):
 def rerank_command(
     query: str, documents: list[dict], method: str = "batch", limit: int = 5
 ) -> list[dict]:
-    MODEL = LLMModel(complex=True)
-
     if method == "individual":
-        return rerank_individual(query, documents[:limit], MODEL)
+        return rerank_individual(query, documents[:limit])
 
     if method == "batch":
-        return rerank_batch(query, documents[:limit], MODEL)
+        return rerank_batch(query, documents[:limit])
 
     if method == "cross_encoder":
         return cross_encoder_method(query, documents[:limit])
