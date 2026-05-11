@@ -16,5 +16,5 @@ dependencies = [
     "transformers==4.57.3",
     "torch>=2.9.1",
     "torchaudio>=2.9.1",
-    "ray>=2.55.1"
+    "ray[serve]>=2.55.1",
 ]
