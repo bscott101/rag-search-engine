@@ -6,18 +6,24 @@ from ray import serve
 from PIL import Image
 from sentence_transformers import SentenceTransformer
 from numpy.typing import NDArray
-from src.schemas import Movie
-from typing import List
+from serving.schemas import Movie
 
 
 @serve.deployment(ray_actor_options={"num_gpus": 0.2})
 class Clip:
-    def __init__(self, documents: List[Movie], model_name="clip-ViT-B-32"):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+    def __init__(self, documents: list[Movie], model_name="clip-ViT-B-32"):
+        self.device = self._get_device()
         self.model = SentenceTransformer(model_name, device=self.device)
         self.documents = documents
         self.texts: List[str] = self._gen_texts()
         self.text_embeddings = self._gen_embs()
+
+    def _get_device(self) -> str:
+        if torch.cuda.is_available():
+            return "cuda"
+        if torch.mps.is_available():
+            return "mps"
+        return "cpu"
 
     def _gen_texts(self):
         temp = []
@@ -46,4 +52,4 @@ class Clip:
             doc["score"] = cos_sim
             res.append(doc)
 
-        return sorted(res, key=lambda x: x["score"], reverse=True)[:limit]
+        return {"results": sorted(res, key=lambda x: x["score"], reverse=True)[:limit]}

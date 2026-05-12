@@ -10,4 +10,4 @@ RUN uv pip install -r pyproject.toml --no-cache --system
 ADD data /app/data  
 ADD src /app/src
 
-CMD ["serve", "run", "src.app:rayApp"]
+CMD ["serve", "run", "serving.app:rayApp"]

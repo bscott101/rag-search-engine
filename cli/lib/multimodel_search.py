@@ -7,7 +7,7 @@ from PIL import Image
 from sentence_transformers import SentenceTransformer, util
 from lib.search_utils import load_movies
 from lib.schemas import Movie, ImageContent
-from typing import List, Literal
+from typing import Literal
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,12 +16,12 @@ MODEL_SERVING = os.environ.get("MODEL_SERVING")
 
 class Clip:
     def __init__(
-        self, model_name="clip-ViT-B-32", documents: List[Movie] = load_movies()
+        self, model_name="clip-ViT-B-32", documents: list[Movie] = load_movies()
     ):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = SentenceTransformer(model_name, device=self.device)
         self.documents = documents
-        self.texts: List[str] = self._gen_texts()
+        self.texts: list[str] = self._gen_texts()
         self.text_embeddings = self._gen_embs()
 
     def _gen_texts(self):
@@ -85,4 +85,4 @@ def image_emded_search(input_image: str, task: Literal["embed", "search"]):
         raise Exception(
             f"Error model request, status_code: {result.status_code} error: {result.text}"
         )
-    return result.json()
+    return result.json()["results"]

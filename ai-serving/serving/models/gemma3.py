@@ -4,7 +4,7 @@ import base64
 from ray import serve
 from PIL import Image
 from transformers import pipeline
-from src.schemas import GenerateContent
+from serving.schemas import GenerateContent
 
 
 @serve.deployment(ray_actor_options={"num_gpus": 0.8})

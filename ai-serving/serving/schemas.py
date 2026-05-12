@@ -10,8 +10,19 @@ class GenerateContent(BaseModel):
     input_image: str | None = None
 
 
-class ClipSearch(BaseModel):
+class GenerateContentResponse(BaseModel):
+    response: str
+
+
+class ClipEmbeddingResonse(BaseModel):
+    embedding: list[float]
+
+
+class ClipEmbedding(BaseModel):
     input_image: str
+
+
+class ClipSearch(ClipEmbedding):
     limit: int | None = 3
 
 
@@ -19,6 +30,14 @@ class Movie(BaseModel):
     id: int
     title: str
     description: str
+
+
+class MovieSearchScore(Movie):
+    score: float
+
+
+class ClipSearchResponse(BaseModel):
+    results: list[MovieSearchScore]
 
 
 class Movies(BaseModel):
