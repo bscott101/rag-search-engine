@@ -7,12 +7,11 @@ from PIL import Image
 from sentence_transformers import SentenceTransformer
 from numpy.typing import NDArray
 from src.schemas import Movie
-from typing import List
 
 
 @serve.deployment(ray_actor_options={"num_gpus": 0.2})
 class Clip:
-    def __init__(self, documents: List[Movie], model_name="clip-ViT-B-32"):
+    def __init__(self, documents: list[Movie], model_name="clip-ViT-B-32"):
         self.device = self._get_device()
         self.model = SentenceTransformer(model_name, device=self.device)
         self.documents = documents
@@ -53,4 +52,4 @@ class Clip:
             doc["score"] = cos_sim
             res.append(doc)
 
-        return sorted(res, key=lambda x: x["score"], reverse=True)[:limit]
+        return {"results": sorted(res, key=lambda x: x["score"], reverse=True)[:limit]}
