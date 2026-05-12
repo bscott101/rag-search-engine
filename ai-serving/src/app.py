@@ -19,16 +19,16 @@ class ModelRouter:
         self.gemma3 = gemma3
         self.clip = clip
 
-    @app.post("/gemma3/generate-content/")
+    @app.post("/gemma3/generate-content")
     async def gemma3_inference(self, input: GenerateContent):
         return await self.gemma3.generate_content.remote(input)
 
-    @app.post("/clip/embed-image/")
+    @app.post("/clip/embed-image")
     async def clip_embed_image(self, input: ClipSearch):
         result = await self.clip.embed_image.remote(input.input_image)
         return {"embedding": result.tolist()}
 
-    @app.post("/clip/image-search/")
+    @app.post("/clip/image-search")
     async def clip_image_search(self, input: ClipSearch):
         return await self.clip.search_with_image.remote(**input.model_dump())
 
