@@ -3,9 +3,9 @@ from ray import serve
 from ray.serve.handle import DeploymentHandle
 from fastapi import FastAPI
 
-from src.models.gemma3 import Gemma3
-from src.models.clip import Clip
-from src.schemas import (
+from serving.models.gemma3 import Gemma3
+from serving.models.clip import Clip
+from serving.schemas import (
     GenerateContent,
     ClipSearch,
     ClipEmbedding,
