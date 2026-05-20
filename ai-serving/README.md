@@ -1,6 +1,6 @@
 # AI Serving
 This is the image creation for the RAG models used in the cli tooling. This is to reduce the loading and unloading of the Large Language Model and Clip embedding model.
-The models are deployed and served 
+The models are deployed and served using a ray cluster with FastAPI as the ingress service. 
 
 
 ## Getting Started
@@ -30,4 +30,26 @@ export MODEL_GENERATE_CONTENT="/gemma3/generate-content/"
 export MODEL_IMAGE_EMBED="/clip/embed-image/"
 export MODEL_IMAGE_SERACH="/clip/image-search/"
 ```
-Alternatively, create a .env file in the root directory of rag-search-engine with these values stored in it
+Alternatively, create a .env file in the root directory of rag-search-engine with these values stored in it.
+
+Its possible to start this service in terminal without need to build the docker image for testing purposes
+```bash
+serve run serving.app:rayApp
+```
+
+### Adding new models
+In order to add more models to this deployment, you will need to create a new deployment file in serving/models/<model>.py
+
+This will need the serve.deployment decorator as the model router uses the binds from these models and ingestest them using ray DeploymentHandle. Example seen below.
+```python
+from ray import serve
+
+@serve.deployment()
+class Model:
+    def __init__(self, ...):
+        ...
+```
+
+Following this, you will need to update the app.py ModelRouter class with the new model in the class init, and add a new FastAPI endpoint to inference this model. 
+
+The new model will need to be generated with ray.bind() method before being passed to the ModelRouter.bind()
