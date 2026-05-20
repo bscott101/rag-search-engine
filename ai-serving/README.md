@@ -1,6 +1,6 @@
 # AI Serving
 This is the image creation for the RAG models used in the cli tooling. This is to reduce the loading and unloading of the Large Language Model and Clip embedding model.
-The models are deployed and served 
+The models are deployed and served using a ray cluster with FastAPI as the ingress service. 
 
 
 ## Getting Started
