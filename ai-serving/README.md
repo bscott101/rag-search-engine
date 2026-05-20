@@ -30,7 +30,12 @@ export MODEL_GENERATE_CONTENT="/gemma3/generate-content/"
 export MODEL_IMAGE_EMBED="/clip/embed-image/"
 export MODEL_IMAGE_SERACH="/clip/image-search/"
 ```
-Alternatively, create a .env file in the root directory of rag-search-engine with these values stored in it
+Alternatively, create a .env file in the root directory of rag-search-engine with these values stored in it.
+
+Its possible to start this service in terminal without need to build the docker image for testing purposes
+```bash
+serve run serving.app:rayApp
+```
 
 ### Adding new models
 In order to add more models to this deployment, you will need to create a new deployment file in serving/models/<model>.py
